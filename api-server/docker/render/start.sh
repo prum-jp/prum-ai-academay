@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
+    mkdir -p database
+    touch database/database.sqlite
+fi
+
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache

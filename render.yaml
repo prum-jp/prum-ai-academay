@@ -15,19 +15,7 @@ services:
       - key: APP_URL
         sync: false
       - key: DB_CONNECTION
-        value: mysql
-      - key: DB_HOST
-        sync: false
-      - key: DB_PORT
-        sync: false
-      - key: DB_DATABASE
-        sync: false
-      - key: DB_USERNAME
-        sync: false
-      - key: DB_PASSWORD
-        sync: false
-      - key: MYSQL_ATTR_SSL_CA
-        value: /etc/ssl/certs/ca-certificates.crt
+        value: sqlite
       - key: SESSION_DRIVER
         value: database
       - key: SESSION_SECURE_COOKIE
