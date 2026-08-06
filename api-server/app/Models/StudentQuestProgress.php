@@ -12,6 +12,10 @@ class StudentQuestProgress extends Model
     protected $fillable = [
         'user_id',
         'quest_id',
+        'status',
+        'submission_url',
+        'submission_type',
+        'submission_text',
         'is_completed',
         'completed_at',
     ];

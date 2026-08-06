@@ -1,7 +1,5 @@
 <template>
     <div class="game-window" :class="{ 'is-plain-content': plainContent }">
-        <slot name="toolbar" />
-
         <header>
             <h1>
                 <i :class="icon"></i>

@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SelectMentorStudentRequest;
 use App\Http\Requests\StoreMentorStudentRequest;
-use App\Http\Resources\MentorStudentResource;
+use App\Http\Resources\StudentListItemResource;
 use App\Models\User;
 use App\Services\LevelCalculator;
 use App\Services\MentorStudentRegistrar;
 use App\Services\MentorStudentService;
+use App\Services\StudentExperienceService;
 use App\Support\AdventurerContext;
+use App\Support\PaginationMeta;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,6 +19,7 @@ class MentorStudentController extends Controller
 {
     public function __construct(
         private readonly LevelCalculator $levelCalculator,
+        private readonly StudentExperienceService $studentExperienceService,
         private readonly MentorStudentService $mentorStudentService,
         private readonly MentorStudentRegistrar $mentorStudentRegistrar,
     ) {}
@@ -32,19 +35,36 @@ class MentorStudentController extends Controller
 
         return response()->json([
             'data' => $paginator->getCollection()->map(
-                fn (User $student) => (new MentorStudentResource(
+                fn (User $student) => (new StudentListItemResource(
                     $student,
                     $this->levelCalculator,
+                    $this->studentExperienceService,
                     $selectedId,
+                    includeEmail: true,
                 ))->resolve(),
             )->values(),
-            'meta' => [
-                'selectedStudentId' => $selectedId,
-                'currentPage' => $paginator->currentPage(),
-                'lastPage' => $paginator->lastPage(),
-                'perPage' => $paginator->perPage(),
-                'total' => $paginator->total(),
-            ],
+            'meta' => array_merge(
+                PaginationMeta::fromPaginator($paginator),
+                ['selectedStudentId' => $selectedId],
+            ),
+        ]);
+    }
+
+    public function picker(Request $request): JsonResponse
+    {
+        $search = trim((string) $request->query('q', ''));
+        $page = max(1, (int) $request->query('page', 1));
+        $paginator = $this->mentorStudentService->paginateForPicker($search, $page);
+
+        return response()->json([
+            'data' => $paginator->getCollection()->map(
+                fn (User $student) => [
+                    'id' => $student->id,
+                    'name' => $student->name,
+                    'email' => $student->email,
+                ],
+            )->values(),
+            'meta' => PaginationMeta::fromPaginator($paginator),
         ]);
     }
 
@@ -59,10 +79,12 @@ class MentorStudentController extends Controller
         ]);
 
         return response()->json([
-            'data' => (new MentorStudentResource(
+            'data' => (new StudentListItemResource(
                 $student,
                 $this->levelCalculator,
+                $this->studentExperienceService,
                 null,
+                includeEmail: true,
             ))->resolve(),
         ], 201);
     }
@@ -74,10 +96,12 @@ class MentorStudentController extends Controller
         AdventurerContext::setMentorTarget($request, $student);
 
         return response()->json([
-            'data' => (new MentorStudentResource(
+            'data' => (new StudentListItemResource(
                 $student,
                 $this->levelCalculator,
+                $this->studentExperienceService,
                 $student->id,
+                includeEmail: true,
             ))->resolve(),
         ]);
     }

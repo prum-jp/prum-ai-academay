@@ -62,7 +62,7 @@ export function useAuth() {
     };
 
     const homePathFor = (authUser: AuthUser): string => {
-        return hasMentorRole(authUser.role) ? '/mentor' : '/';
+        return hasMentorRole(authUser.role) ? '/mentor/quests' : '/';
     };
 
     return {

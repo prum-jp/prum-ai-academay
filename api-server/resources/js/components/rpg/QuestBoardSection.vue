@@ -5,6 +5,8 @@
             <h3>{{ title }}</h3>
         </header>
 
+        <slot name="filters" />
+
         <AsyncState
             :is-loading="isLoading"
             :error="error"

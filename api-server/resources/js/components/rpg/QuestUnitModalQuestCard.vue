@@ -1,68 +1,47 @@
 <template>
     <article
-        class="quest-unit-modal-card"
-        :class="{ 'is-completed': quest.isCompleted }"
+        class="quest-unit-modal-row"
+        :class="{
+            'is-completed': !quest.isLocked && quest.progressStatus === 'completed',
+            'is-locked': quest.isLocked,
+        }"
     >
-        <div class="quest-unit-modal-card-top">
-            <QuestCheckbox
-                :checked="quest.isCompleted"
-                :disabled="quest.isLocked || disabled"
-                @toggle="$emit('toggle')"
-            />
-
-            <div class="quest-unit-modal-card-badges">
-                <span v-if="quest.tool" class="quest-unit-tool-badge">
-                    <i :class="toolIcon" aria-hidden="true"></i>
-                    {{ quest.tool.name }}
-                </span>
-            </div>
+        <div class="quest-unit-modal-row-main">
+            <RouterLink
+                v-if="!quest.isLocked"
+                class="quest-unit-modal-row-title"
+                :to="{ name: 'student-quest-detail', params: { questId: quest.id } }"
+            >
+                {{ quest.title }}
+            </RouterLink>
+            <span v-else class="quest-unit-modal-row-title is-disabled">
+                {{ quest.title }}
+            </span>
+            <span v-if="quest.isLocked" class="quest-unit-modal-lock-note">
+                {{ lockLabel }}
+            </span>
         </div>
 
-        <h3 class="quest-unit-modal-card-title">{{ quest.title }}</h3>
-
-        <p v-if="quest.description" class="quest-unit-modal-card-description">
-            {{ quest.description }}
-        </p>
-
-        <section class="quest-unit-clear-box">
-            <header class="quest-unit-clear-box-header">
-                <span class="quest-unit-clear-icon" aria-hidden="true">
-                    <i class="fa-solid fa-check"></i>
-                </span>
-                <i class="fa-solid fa-trophy quest-unit-clear-trophy" aria-hidden="true"></i>
-                <h4>{{ questUnitConfig.clearConditionTitle }}</h4>
-            </header>
-            <p class="quest-unit-clear-box-body">
-                {{ clearConditionText }}
-            </p>
-        </section>
+        <QuestProgressStatusBadge
+            v-if="!quest.isLocked"
+            :status="quest.progressStatus"
+            size="sm"
+            compact
+        />
+        <span v-else class="quest-progress-badge is-sm is-not-started">未解放</span>
     </article>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { RouterLink } from 'vue-router';
 import type { QuestItem } from '@/types/quest';
-import { questUnitConfig } from '@/constants/quests';
-import QuestCheckbox from '@/components/rpg/QuestCheckbox.vue';
+import { formatQuestLockLabel } from '@/utils/questDisplay';
+import QuestProgressStatusBadge from '@/components/rpg/QuestProgressStatusBadge.vue';
 
 const props = defineProps<{
     quest: QuestItem;
-    disabled?: boolean;
 }>();
 
-defineEmits<{
-    toggle: [];
-}>();
-
-const toolIcon = computed(
-    () => props.quest.tool?.icon ?? questUnitConfig.defaultToolIcon,
-);
-
-const clearConditionText = computed((): string => {
-    if (props.quest.clearCondition.trim() !== '') {
-        return props.quest.clearCondition;
-    }
-
-    return questUnitConfig.emptyClearCondition;
-});
+const lockLabel = computed(() => formatQuestLockLabel(props.quest));
 </script>

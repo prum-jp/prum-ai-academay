@@ -2,9 +2,19 @@ import { createRouter, createWebHistory } from 'vue-router';
 import StudentLayout from '@/layouts/StudentLayout.vue';
 import StudentPage from '@/pages/StudentPage.vue';
 import StudentQuestsPage from '@/pages/StudentQuestsPage.vue';
-import StudentSkillbookPage from '@/pages/StudentSkillbookPage.vue';
-import MentorPage from '@/pages/MentorPage.vue';
+import StudentQuestDetailPage from '@/pages/StudentQuestDetailPage.vue';
+// TODO: 後に機能追加 — 実績バッジ（スキルブック）
+// import StudentSkillbookPage from '@/pages/StudentSkillbookPage.vue';
+import StudentDirectoryPage from '@/pages/StudentDirectoryPage.vue';
+import StudentDetailPage from '@/pages/StudentDetailPage.vue';
+import MentorNotificationsPage from '@/pages/MentorNotificationsPage.vue';
 import MentorQuestsPage from '@/pages/MentorQuestsPage.vue';
+import MentorQuestMasterPage from '@/pages/MentorQuestMasterPage.vue';
+import MentorQuestDetailPage from '@/pages/MentorQuestDetailPage.vue';
+import MentorQuestEditPage from '@/pages/MentorQuestEditPage.vue';
+import MentorQuestUnitDetailPage from '@/pages/MentorQuestUnitDetailPage.vue';
+import MentorQuestUnitEditPage from '@/pages/MentorQuestUnitEditPage.vue';
+import MentorQuestCreatePage from '@/pages/MentorQuestCreatePage.vue';
 import MentorToolsPage from '@/pages/MentorToolsPage.vue';
 import MentorStudentRegisterPage from '@/pages/MentorStudentRegisterPage.vue';
 import LoginPage from '@/pages/LoginPage.vue';
@@ -36,16 +46,38 @@ const router = createRouter({
                     component: StudentQuestsPage,
                 },
                 {
-                    path: 'skillbook',
-                    name: 'student-skillbook',
-                    component: StudentSkillbookPage,
+                    path: 'quests/:questId',
+                    name: 'student-quest-detail',
+                    component: StudentQuestDetailPage,
+                    meta: { studentPage: 'student-quests' },
+                },
+                // TODO: 後に機能追加 — 実績バッジ（スキルブック）
+                // {
+                //     path: 'skillbook',
+                //     name: 'student-skillbook',
+                //     component: StudentSkillbookPage,
+                // },
+                {
+                    path: 'students',
+                    name: 'student-directory',
+                    component: StudentDirectoryPage,
+                },
+                {
+                    path: 'students/:studentId',
+                    name: 'student-detail',
+                    component: StudentDetailPage,
+                    meta: { studentPage: 'student-directory', singleColumn: false },
                 },
             ],
         },
         {
             path: '/mentor',
-            name: 'mentor',
-            component: MentorPage,
+            redirect: { name: 'mentor-quests' },
+        },
+        {
+            path: '/mentor/notifications',
+            name: 'mentor-notifications',
+            component: MentorNotificationsPage,
             meta: { requiresAuth: true, roles: [ROLE_MENTOR] },
         },
         {
@@ -58,6 +90,42 @@ const router = createRouter({
             path: '/mentor/quests',
             name: 'mentor-quests',
             component: MentorQuestsPage,
+            meta: { requiresAuth: true, roles: [ROLE_MENTOR] },
+        },
+        {
+            path: '/mentor/quests/master',
+            name: 'mentor-quest-master',
+            component: MentorQuestMasterPage,
+            meta: { requiresAuth: true, roles: [ROLE_MENTOR] },
+        },
+        {
+            path: '/mentor/quests/new',
+            name: 'mentor-quest-create',
+            component: MentorQuestCreatePage,
+            meta: { requiresAuth: true, roles: [ROLE_MENTOR] },
+        },
+        {
+            path: '/mentor/quests/:questId/edit',
+            name: 'mentor-quest-edit',
+            component: MentorQuestEditPage,
+            meta: { requiresAuth: true, roles: [ROLE_MENTOR] },
+        },
+        {
+            path: '/mentor/quests/:questId',
+            name: 'mentor-quest-detail',
+            component: MentorQuestDetailPage,
+            meta: { requiresAuth: true, roles: [ROLE_MENTOR] },
+        },
+        {
+            path: '/mentor/quest-units/:unitId/edit',
+            name: 'mentor-quest-unit-edit',
+            component: MentorQuestUnitEditPage,
+            meta: { requiresAuth: true, roles: [ROLE_MENTOR] },
+        },
+        {
+            path: '/mentor/quest-units/:unitId',
+            name: 'mentor-quest-unit-detail',
+            component: MentorQuestUnitDetailPage,
             meta: { requiresAuth: true, roles: [ROLE_MENTOR] },
         },
         {

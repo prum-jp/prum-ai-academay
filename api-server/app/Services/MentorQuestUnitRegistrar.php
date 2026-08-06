@@ -4,16 +4,20 @@ namespace App\Services;
 
 use App\Models\Quest;
 use App\Models\QuestUnit;
+use App\Support\QuestTier;
 use Illuminate\Support\Facades\DB;
 
 class MentorQuestUnitRegistrar
 {
+    public function __construct(
+        private readonly QuestSkillGrantSync $questSkillGrantSync,
+    ) {}
+
     /**
      * @param  array{
      *     title: string,
      *     description?: string|null,
-     *     rewardText?: string|null,
-     *     rewards?: list<array{stat: string, points: int}>
+     *     quests?: list<array{id?: int|null, title: string, description?: string|null, clearCondition?: string|null, toolId?: int|null, sortOrder?: int|null, difficulty?: int|null, experiencePoints?: int|null, skillGrants?: list<string>, questTier?: string|null}>
      * }  $payload
      */
     public function register(array $payload): QuestUnit
@@ -21,20 +25,14 @@ class MentorQuestUnitRegistrar
         return DB::transaction(function () use ($payload): QuestUnit {
             $unit = QuestUnit::query()->create([
                 'title' => $payload['title'],
-                'description' => $payload['description'] ?? '',
-                'reward_text' => $payload['rewardText'] ?? '',
+                'description' => '',
+                'reward_text' => null,
                 'sort_order' => ((int) QuestUnit::query()->max('sort_order')) + 1,
-                'is_published' => false,
             ]);
 
-            foreach ($payload['rewards'] ?? [] as $reward) {
-                $unit->rewards()->create([
-                    'stat' => $reward['stat'],
-                    'points' => $reward['points'],
-                ]);
-            }
+            $this->syncChildQuests($unit, $payload['quests'] ?? []);
 
-            return $unit->load('rewards')->loadCount('quests');
+            return $unit->loadCount('quests');
         });
     }
 
@@ -42,9 +40,7 @@ class MentorQuestUnitRegistrar
      * @param  array{
      *     title: string,
      *     description?: string|null,
-     *     rewardText?: string|null,
-     *     rewards?: list<array{stat: string, points: int}>,
-     *     quests?: list<array{id?: int|null, title: string, description?: string|null, clearCondition?: string|null, toolId?: int|null, sortOrder?: int|null}>
+     *     quests?: list<array{id?: int|null, title: string, description?: string|null, clearCondition?: string|null, toolId?: int|null, sortOrder?: int|null, difficulty?: int|null, experiencePoints?: int|null, skillGrants?: list<string>, questTier?: string|null}>
      * }  $payload
      */
     public function update(QuestUnit $unit, array $payload): QuestUnit
@@ -52,37 +48,14 @@ class MentorQuestUnitRegistrar
         return DB::transaction(function () use ($unit, $payload): QuestUnit {
             $unit->update([
                 'title' => $payload['title'],
-                'description' => $payload['description'] ?? '',
-                'reward_text' => $payload['rewardText'] ?? '',
+                'description' => '',
+                'reward_text' => null,
             ]);
-
-            $unit->rewards()->delete();
-            foreach ($payload['rewards'] ?? [] as $reward) {
-                $unit->rewards()->create([
-                    'stat' => $reward['stat'],
-                    'points' => $reward['points'],
-                ]);
-            }
 
             $this->syncChildQuests($unit, $payload['quests'] ?? []);
 
-            return $unit->fresh(['rewards'])->loadCount('quests');
+            return $unit->fresh()->loadCount('quests');
         });
-    }
-
-    public function setPublished(QuestUnit $unit, bool $isPublished): QuestUnit
-    {
-        return DB::transaction(function () use ($unit, $isPublished): QuestUnit {
-            $unit->update(['is_published' => $isPublished]);
-            $this->syncChildQuestPublish($unit, $isPublished);
-
-            return $unit->fresh(['rewards'])->loadCount('quests');
-        });
-    }
-
-    public function syncChildQuestPublish(QuestUnit $unit, bool $isPublished): void
-    {
-        $unit->quests()->update(['is_published' => $isPublished]);
     }
 
     public function delete(QuestUnit $unit): void
@@ -95,7 +68,21 @@ class MentorQuestUnitRegistrar
     }
 
     /**
-     * @param  list<array{id?: int|null, title: string, description?: string|null, clearCondition?: string|null, toolId?: int|null, sortOrder?: int|null, isPublished?: bool}>  $quests
+     * @param  list<int>  $unitIds
+     */
+    public function reorder(array $unitIds): void
+    {
+        DB::transaction(function () use ($unitIds): void {
+            foreach ($unitIds as $index => $unitId) {
+                QuestUnit::query()
+                    ->whereKey($unitId)
+                    ->update(['sort_order' => $index + 1]);
+            }
+        });
+    }
+
+    /**
+     * @param  list<array{id?: int|null, title: string, description?: string|null, clearCondition?: string|null, toolId?: int|null, sortOrder?: int|null, difficulty?: int|null, experiencePoints?: int|null, skillGrants?: list<string>, questTier?: string|null}>  $quests
      */
     private function syncChildQuests(QuestUnit $unit, array $quests): void
     {
@@ -104,14 +91,18 @@ class MentorQuestUnitRegistrar
 
         foreach ($quests as $questData) {
             $index++;
+            $difficulty = \App\Support\QuestDifficulty::normalize($questData['difficulty'] ?? null);
             $attributes = [
                 'title' => $questData['title'],
                 'description' => $questData['description'] ?? '',
                 'clear_condition' => $questData['clearCondition'] ?? '',
                 'tool_id' => $questData['toolId'] ?? null,
+                'difficulty' => $difficulty,
+                'experience_points' => \App\Support\QuestDifficulty::experiencePoints($difficulty),
                 'sort_order' => $questData['sortOrder'] ?? $index,
-                'is_published' => $questData['isPublished'] ?? true,
+                'is_published' => true,
             ];
+            QuestTier::applyToAttributes($attributes, $questData['questTier'] ?? QuestTier::LOW);
 
             $existing = isset($questData['id'])
                 ? $unit->quests()->whereKey($questData['id'])->first()
@@ -119,6 +110,7 @@ class MentorQuestUnitRegistrar
 
             if ($existing !== null) {
                 $existing->update($attributes);
+                $this->questSkillGrantSync->syncForQuest($existing, $questData['skillGrants'] ?? []);
                 $keptIds[] = $existing->id;
 
                 continue;
@@ -128,13 +120,13 @@ class MentorQuestUnitRegistrar
                 ...$attributes,
                 'type' => Quest::TYPE_PERSONAL,
                 'is_required' => true,
-                'unlock_level' => null,
                 'reward_text' => null,
                 'badge_label' => null,
                 'brand_label' => null,
                 'starts_at' => now()->toDateString(),
                 'ends_at' => now()->addMonths(2)->toDateString(),
             ]);
+            $this->questSkillGrantSync->syncForQuest($created, $questData['skillGrants'] ?? []);
             $keptIds[] = $created->id;
         }
 

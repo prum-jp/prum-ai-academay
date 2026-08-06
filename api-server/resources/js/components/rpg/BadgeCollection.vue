@@ -1,3 +1,4 @@
+<!-- TODO: 後に機能追加 — 実績バッジコレクション（スキルブックページから利用） -->
 <template>
     <RpgCard :title="badgeCollectionConfig.cardTitle" :icon="badgeCollectionConfig.cardIcon">
         <BadgeSummary

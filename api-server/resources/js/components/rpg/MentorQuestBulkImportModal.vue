@@ -1,5 +1,6 @@
 <template>
-    <RpgModal
+    <div class="mentor-quest-bulk-import">
+        <RpgModal
         :open="open"
         :title="questImportModalConfig.title"
         :icon="questImportModalConfig.icon"
@@ -7,6 +8,27 @@
         @close="handleClose"
     >
         <div v-if="step === 'upload'" class="quest-import-upload">
+            <div class="input-group">
+                <label for="quest-import-default-tier">
+                    {{ questImportModalConfig.defaultQuestTierLabel }}
+                </label>
+                <select
+                    id="quest-import-default-tier"
+                    v-model="defaultQuestTier"
+                    class="quest-sheet-create-meta-input"
+                    :disabled="isLoading"
+                >
+                    <option
+                        v-for="option in QUEST_TIER_OPTIONS"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}（{{ option.requirement }}）
+                    </option>
+                </select>
+            </div>
+            <p class="mentor-register-note">{{ questImportModalConfig.defaultQuestTierHint }}</p>
+
             <div class="input-group">
                 <label for="quest-import-file">{{ questImportModalConfig.uploadLabel }}</label>
                 <input
@@ -26,13 +48,6 @@
                 <p class="quest-import-summary">
                     {{ questImportMessages.summary(meta) }}
                 </p>
-                <MentorPublishToggle
-                    :model-value="allPublished"
-                    :on-label="questImportModalConfig.publishAllOnLabel"
-                    :off-label="questImportModalConfig.publishAllOffLabel"
-                    :disabled="isLoading || isApplying || items.length === 0"
-                    @update:model-value="setAllPublished"
-                />
             </div>
 
             <p v-if="isLoading" class="async-state-note">{{ questImportModalConfig.previewLoadingLabel }}</p>
@@ -58,7 +73,6 @@
                         v-model="items[entry.index]"
                         :all-items="items"
                         @remove="removeItem(entry.item.clientId)"
-                        @sync-unit-publish="syncUnitPublish"
                     />
                 </div>
             </div>
@@ -79,7 +93,7 @@
                 <RpgButton
                     v-if="step === 'preview'"
                     type="button"
-                    :disabled="isLoading || isApplying"
+                    :disabled="isLoading || isApplying || isAssignSubmitting"
                     @click="backToUpload"
                 >
                     {{ questImportModalConfig.backLabel }}
@@ -87,7 +101,7 @@
                 <RpgButton
                     v-else
                     type="button"
-                    :disabled="isLoading || isApplying"
+                    :disabled="isLoading || isApplying || isAssignSubmitting"
                     @click="handleClose"
                 >
                     {{ questImportModalConfig.cancelLabel }}
@@ -96,28 +110,45 @@
                 <RpgButton
                     v-if="step === 'preview'"
                     type="button"
-                    icon="fa-solid fa-check"
-                    :disabled="isLoading || isApplying || hasBlockingErrors || items.length === 0"
-                    @click="onApply"
+                    icon="fa-solid fa-users"
+                    :disabled="isLoading || isApplying || isAssignSubmitting || hasBlockingErrors || items.length === 0"
+                    @click="openAssignModal"
                 >
                     {{
-                        isApplying
-                            ? questImportModalConfig.applyingLabel
-                            : questImportModalConfig.applyLabel
+                        isApplying || isAssignSubmitting
+                            ? questImportModalConfig.assigningLabel
+                            : questImportModalConfig.assignLabel
                     }}
                 </RpgButton>
             </div>
         </template>
     </RpgModal>
+
+    <MentorQuestUnitAssignModal
+        :open="isAssignModalOpen"
+        :is-submitting="isAssignSubmitting"
+        :error-message="assignErrorMessage"
+        :description="questImportModalConfig.assignModalDescription"
+        :submit-label="questImportModalConfig.assignLabel"
+        :submitting-label="questImportModalConfig.assigningLabel"
+        @close="closeAssignModal"
+        @confirm="onConfirmAssignment"
+    />
+    </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { questImportMessages, questImportModalConfig } from '@/constants/questImport';
+import { QUEST_TIER_OPTIONS } from '@/constants/questTier';
+import { mentorAssignmentMessages } from '@/constants/curriculum';
+import type { CurriculumAssignmentTarget } from '@/types/curriculum';
 import { useMentorQuestImport } from '@/composables/useMentorQuestImport';
+import { assignQuestUnitsToStudents } from '@/utils/assignQuestUnitsToStudents';
 import { buildPreviewGroups } from '@/utils/questImport/previewGroups';
-import MentorPublishToggle from '@/components/rpg/MentorPublishToggle.vue';
+import { collectPersonalUnitIdsFromImportResults } from '@/utils/questImport/collectPersonalUnitIds';
 import MentorQuestImportPreviewRow from '@/components/rpg/MentorQuestImportPreviewRow.vue';
+import MentorQuestUnitAssignModal from '@/components/rpg/MentorQuestUnitAssignModal.vue';
 import RpgButton from '@/components/rpg/RpgButton.vue';
 import RpgModal from '@/components/rpg/RpgModal.vue';
 
@@ -130,6 +161,10 @@ const emit = defineEmits<{
     imported: [];
 }>();
 
+const isAssignModalOpen = ref(false);
+const isAssignSubmitting = ref(false);
+const assignErrorMessage = ref('');
+
 const {
     step,
     items,
@@ -139,39 +174,38 @@ const {
     isLoading,
     isApplying,
     selectedFileName,
+    defaultQuestTier,
     hasBlockingErrors,
     reset,
     loadCsvFile,
     removeItem,
-    setAllPublished,
-    syncUnitPublish,
     apply,
 } = useMentorQuestImport();
 
-const allPublished = computed(
-    (): boolean => items.value.length > 0 && items.value.every((item) => item.isPublished),
-);
-
 const previewGroups = computed(() => buildPreviewGroups(items.value));
+
 watch(
     () => props.open,
     (open) => {
         if (!open) {
             reset();
+            closeAssignModal();
         }
     },
 );
 
 const handleClose = (): void => {
-    if (isApplying.value) {
+    if (isApplying.value || isAssignSubmitting.value) {
         return;
     }
 
     reset();
+    closeAssignModal();
     emit('close');
 };
 
 const backToUpload = (): void => {
+    closeAssignModal();
     reset();
 };
 
@@ -182,18 +216,76 @@ const onFileChange = async (event: Event): Promise<void> => {
         return;
     }
 
-    await loadCsvFile(file);
+    await loadCsvFile(file, defaultQuestTier.value);
     input.value = '';
 };
 
-const onApply = async (): Promise<void> => {
-    const success = await apply();
-    if (!success) {
+const openAssignModal = (): void => {
+    if (hasBlockingErrors.value || items.value.length === 0) {
         return;
     }
 
-    emit('imported');
-    reset();
-    emit('close');
+    assignErrorMessage.value = '';
+    isAssignModalOpen.value = true;
+};
+
+const closeAssignModal = (): void => {
+    if (isAssignSubmitting.value) {
+        return;
+    }
+
+    isAssignModalOpen.value = false;
+    assignErrorMessage.value = '';
+};
+
+const onConfirmAssignment = async (payload: {
+    assignmentTarget: CurriculumAssignmentTarget;
+    studentIds: number[];
+}): Promise<void> => {
+    if (isAssignSubmitting.value) {
+        return;
+    }
+
+    isAssignSubmitting.value = true;
+    assignErrorMessage.value = '';
+
+    const results = await apply();
+    if (!results) {
+        isAssignSubmitting.value = false;
+        isAssignModalOpen.value = false;
+
+        return;
+    }
+
+    const unitIds = collectPersonalUnitIdsFromImportResults(results);
+
+    if (unitIds.length === 0) {
+        isAssignModalOpen.value = false;
+        isAssignSubmitting.value = false;
+        emit('imported');
+        reset();
+        emit('close');
+        return;
+    }
+
+    try {
+        await assignQuestUnitsToStudents(
+            unitIds,
+            payload.assignmentTarget,
+            payload.studentIds,
+        );
+
+        isAssignModalOpen.value = false;
+        emit('imported');
+        reset();
+        emit('close');
+    } catch {
+        assignErrorMessage.value =
+            payload.assignmentTarget === 'all'
+                ? mentorAssignmentMessages.assignAllStudentsFailed
+                : mentorAssignmentMessages.assignSelectedStudentsFailed;
+    } finally {
+        isAssignSubmitting.value = false;
+    }
 };
 </script>

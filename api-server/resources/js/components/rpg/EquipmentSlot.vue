@@ -10,6 +10,7 @@
                     :value="modelValue"
                     rows="2"
                     :placeholder="placeholder"
+                    :readonly="readonly"
                     @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
                     @blur="$emit('blur')"
                 ></textarea>
@@ -25,9 +26,11 @@ withDefaults(
         modelValue: string;
         icon: string;
         placeholder?: string;
+        readonly?: boolean;
     }>(),
     {
         placeholder: '',
+        readonly: false,
     },
 );
 

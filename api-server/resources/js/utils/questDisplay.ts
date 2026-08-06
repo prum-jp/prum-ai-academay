@@ -1,5 +1,13 @@
-import type { QuestItem, QuestReward, QuestType } from '@/types/quest';
-import { statDefinitions } from '@/constants/stats';
+import type { QuestItem, QuestType } from '@/types/quest';
+import { questProgressStatusLabels } from '@/constants/questProgress';
+import { questSheetConfig } from '@/constants/questSheet';
+import {
+    formatQuestDifficulty,
+    formatQuestSkillLabel,
+    resolveQuestExperiencePoints,
+} from '@/utils/questSheetMeta';
+import { formatExperiencePoints } from '@/utils/questDifficulty';
+import { formatSkillGrantReward } from '@/utils/skillGrants';
 
 export type QuestBadgeVariant = 'is-welcome' | 'is-lock' | 'is-default';
 export type QuestStatusClass = 'is-locked' | 'is-completed' | 'is-open';
@@ -40,27 +48,22 @@ export const getQuestStatusLabel = (quest: QuestItem): string => {
     if (quest.isLocked) {
         return '未解放';
     }
-    if (quest.isCompleted) {
-        return '達成済み';
-    }
-    return '進行中';
+
+    return questProgressStatusLabels[quest.progressStatus];
 };
 
 export const getQuestStatusClass = (quest: QuestItem): QuestStatusClass => {
     if (quest.isLocked) {
         return 'is-locked';
     }
-    if (quest.isCompleted) {
+    if (quest.progressStatus === 'completed') {
         return 'is-completed';
     }
     return 'is-open';
 };
 
-export const formatQuestReward = (reward: QuestReward): string => {
-    const stat = statDefinitions.find((item) => item.key === reward.stat);
-    const label = stat?.label ?? reward.stat;
-    return `${label} +${reward.points}`;
-};
+export const formatQuestReward = (reward: { skill: string }): string =>
+    formatSkillGrantReward(reward.skill as import('@/constants/skills').SkillKey);
 
 export const formatQuestDate = (value: string | null): string | null => {
     if (!value) {
@@ -96,7 +99,19 @@ export const formatQuestPeriod = (quest: QuestItem): string => {
 };
 
 export const formatUnlockLevel = (unlockLevel: number | null): string => {
-    return unlockLevel !== null ? `Lv.${unlockLevel}` : '制限なし';
+    return unlockLevel !== null ? `Lv.${unlockLevel}以上` : '制限なし';
+};
+
+export const formatQuestLockLabel = (quest: QuestItem): string => {
+    if (!quest.isLocked) {
+        return '';
+    }
+
+    if (quest.unlockLevel !== null) {
+        return `${formatUnlockLevel(quest.unlockLevel)}で解放`;
+    }
+
+    return '未解放';
 };
 
 export const formatRequiredLabel = (isRequired: boolean): string => {
@@ -104,8 +119,15 @@ export const formatRequiredLabel = (isRequired: boolean): string => {
 };
 
 export const getQuestDetailFacts = (quest: QuestItem): QuestDetailFact[] => {
+    const { metaLabels } = questSheetConfig;
     const facts: QuestDetailFact[] = [
         { label: '種別', value: getQuestTypeLabel(quest.type) },
+        { label: metaLabels.difficulty, value: formatQuestDifficulty(quest) },
+        {
+            label: metaLabels.experiencePoints,
+            value: formatExperiencePoints(resolveQuestExperiencePoints(quest)),
+        },
+        { label: metaLabels.acquiredSkill, value: formatQuestSkillLabel(quest) },
         { label: '必須', value: formatRequiredLabel(quest.isRequired) },
         { label: '解放レベル', value: formatUnlockLevel(quest.unlockLevel) },
         { label: '期間', value: formatQuestPeriod(quest) },

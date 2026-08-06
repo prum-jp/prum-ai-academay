@@ -1,3 +1,4 @@
+// TODO: 後に機能追加 — 実績バッジ一覧（スキルブックページから利用）
 import { onMounted, ref } from 'vue';
 import { fetchBadges } from '@/api/badges';
 import { badgeCollectionConfig } from '@/constants/badges';

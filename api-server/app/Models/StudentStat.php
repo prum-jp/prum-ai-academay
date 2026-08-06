@@ -9,13 +9,24 @@ class StudentStat extends Model
 {
     protected $fillable = [
         'user_id',
-        'stat_presentation',
-        'stat_communication',
-        'stat_problem_finding',
-        'stat_ai_affinity',
-        'stat_action',
-        'stat_support',
+        'stat_business_skill',
+        'stat_human_skill',
+        'stat_conceptual_skill',
+        'total_xp',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'stat_business_skill' => 'integer',
+            'stat_human_skill' => 'integer',
+            'stat_conceptual_skill' => 'integer',
+            'total_xp' => 'integer',
+        ];
+    }
 
     public function user(): BelongsTo
     {

@@ -1,59 +1,27 @@
-import { onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { fetchMentorStudents, selectMentorStudent } from '@/api/mentor';
 import type { MentorStudent, MentorStudentListMeta } from '@/types/mentor';
 import { mentorStudentMessages } from '@/constants/mentor';
-import { useGameAudio } from '@/composables/useGameAudio';
+import { usePaginatedSearchList } from '@/composables/usePaginatedSearchList';
 import { extractApiErrorMessage } from '@/utils/extractApiErrorMessage';
+import { resolveSearchEmptyMessage } from '@/utils/studentListMessages';
 
 export function useMentorStudents() {
-    const students = ref<MentorStudent[]>([]);
-    const meta = ref<MentorStudentListMeta | null>(null);
-    const searchQuery = ref('');
-    const appliedQuery = ref('');
-    const isLoading = ref(true);
+    const list = usePaginatedSearchList<MentorStudent, MentorStudentListMeta>(
+        fetchMentorStudents,
+        mentorStudentMessages.loadFailed,
+    );
+
     const isSelecting = ref(false);
-    const error = ref('');
     const selectError = ref('');
 
-    const { playSound } = useGameAudio();
-    let requestId = 0;
-
-    const loadStudents = async (page = 1): Promise<void> => {
-        const currentRequestId = ++requestId;
-        isLoading.value = true;
-        error.value = '';
-
-        try {
-            const response = await fetchMentorStudents(page, appliedQuery.value);
-            if (currentRequestId !== requestId) {
-                return;
-            }
-
-            students.value = response.data;
-            meta.value = response.meta;
-        } catch (caughtError: unknown) {
-            if (currentRequestId !== requestId) {
-                return;
-            }
-
-            error.value = extractApiErrorMessage(
-                caughtError,
-                undefined,
-                mentorStudentMessages.loadFailed,
-            );
-            students.value = [];
-            meta.value = null;
-        } finally {
-            if (currentRequestId === requestId) {
-                isLoading.value = false;
-            }
-        }
-    };
-
-    const searchStudents = async (): Promise<void> => {
-        appliedQuery.value = searchQuery.value.trim();
-        await loadStudents(1);
-    };
+    const emptyMessage = computed((): string =>
+        resolveSearchEmptyMessage(
+            list.appliedQuery.value,
+            mentorStudentMessages.emptySearch,
+            mentorStudentMessages.emptyList,
+        ),
+    );
 
     const selectStudent = async (student: MentorStudent): Promise<MentorStudent | null> => {
         if (isSelecting.value) {
@@ -65,20 +33,18 @@ export function useMentorStudents() {
 
         try {
             const selected = await selectMentorStudent(student.id);
-            students.value = students.value.map((item) => ({
+            list.items.value = list.items.value.map((item) => ({
                 ...item,
                 isSelected: item.id === selected.id,
             }));
-            if (meta.value) {
-                meta.value = {
-                    ...meta.value,
+            if (list.meta.value) {
+                list.meta.value = {
+                    ...list.meta.value,
                     selectedStudentId: selected.id,
                 };
             }
-            playSound('click');
             return selected;
         } catch (caughtError: unknown) {
-            playSound('down');
             selectError.value = extractApiErrorMessage(
                 caughtError,
                 'studentId',
@@ -90,21 +56,18 @@ export function useMentorStudents() {
         }
     };
 
-    onMounted(() => {
-        void loadStudents();
-    });
-
     return {
-        students,
-        meta,
-        searchQuery,
-        appliedQuery,
-        isLoading,
+        students: list.items,
+        meta: list.meta,
+        searchQuery: list.searchQuery,
+        appliedQuery: list.appliedQuery,
+        isLoading: list.isLoading,
         isSelecting,
-        error,
+        error: list.error,
         selectError,
-        loadStudents,
-        searchStudents,
+        emptyMessage,
+        loadStudents: list.loadPage,
+        searchStudents: list.search,
         selectStudent,
     };
 }

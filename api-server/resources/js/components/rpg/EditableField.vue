@@ -5,6 +5,7 @@
             :value="modelValue"
             type="text"
             :placeholder="placeholder"
+            :readonly="readonly"
             @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
             @blur="$emit('blur')"
         />
@@ -17,9 +18,11 @@ withDefaults(
         label: string;
         modelValue: string;
         placeholder?: string;
+        readonly?: boolean;
     }>(),
     {
         placeholder: '',
+        readonly: false,
     },
 );
 

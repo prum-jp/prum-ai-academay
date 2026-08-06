@@ -56,7 +56,7 @@ export function useQuestDetail(quest: Ref<QuestItem | null>) {
         if (!quest.value) {
             return false;
         }
-        return Boolean(quest.value.rewardText) || quest.value.rewards.length > 0;
+        return Boolean(quest.value.rewardText) || (quest.value.skillGrants?.length ?? 0) > 0;
     });
 
     return {

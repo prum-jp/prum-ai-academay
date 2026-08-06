@@ -7,19 +7,18 @@
                     {{ mentorQuestAdminMessages.unitQuestCountLabel(unit.questCount) }}
                 </span>
             </div>
-
-            <p v-if="unit.rewardText" class="quest-reward">
-                <i class="fa-solid fa-star"></i>
-                {{ unit.rewardText }}
-            </p>
         </div>
 
         <div class="mentor-quest-admin-actions">
-            <MentorPublishToggle
-                :model-value="unit.isPublished"
+            <button
+                type="button"
+                class="mentor-quest-admin-action"
                 :disabled="disabled"
-                @update:model-value="$emit('toggle-publish')"
-            />
+                @click="$emit('assign-all')"
+            >
+                <i class="fa-solid fa-users" aria-hidden="true"></i>
+                {{ mentorAssignmentMessages.assignAllStudents }}
+            </button>
             <button
                 type="button"
                 class="mentor-quest-admin-action"
@@ -44,11 +43,11 @@
 
 <script setup lang="ts">
 import type { MentorQuestUnitItem } from '@/types/questAdmin';
+import { mentorAssignmentMessages } from '@/constants/curriculum';
 import {
     mentorQuestAdminCardActions,
     mentorQuestAdminMessages,
 } from '@/constants/questAdmin';
-import MentorPublishToggle from '@/components/rpg/MentorPublishToggle.vue';
 
 defineProps<{
     unit: MentorQuestUnitItem;
@@ -58,6 +57,6 @@ defineProps<{
 defineEmits<{
     edit: [];
     delete: [];
-    'toggle-publish': [];
+    'assign-all': [];
 }>();
 </script>

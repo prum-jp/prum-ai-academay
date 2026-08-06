@@ -5,6 +5,11 @@ import type {
     QuestType,
     QuestUnitListResponse,
 } from '@/types/quest';
+import type { UnitProgressFilter } from '@/constants/unitProgress';
+import { DEFAULT_UNIT_PROGRESS_FILTER } from '@/constants/unitProgress';
+import type { QuestSubmissionPayload } from '@/types/questSubmission';
+import { patchQuestProgress } from '@/api/questProgress';
+import type { QuestProgressStatus } from '@/constants/questProgress';
 
 export const fetchQuests = async (
     type: QuestType,
@@ -17,16 +22,51 @@ export const fetchQuests = async (
     return data;
 };
 
-export const fetchQuestUnits = async (page = 1): Promise<QuestUnitListResponse> => {
+export const fetchQuestUnits = async (
+    page = 1,
+    progressFilter: UnitProgressFilter = DEFAULT_UNIT_PROGRESS_FILTER,
+): Promise<QuestUnitListResponse> => {
     const { data } = await axios.get<QuestUnitListResponse>('/api/quest-units', {
-        params: { page },
+        params: { page, progressFilter },
     });
 
     return data;
 };
 
-export const toggleQuestProgress = async (questId: number): Promise<QuestItem> => {
-    const { data } = await axios.patch<QuestItem>(`/api/quests/${questId}/progress`);
+export const fetchQuest = async (questId: number): Promise<QuestItem> => {
+    const { data } = await axios.get<{ data: QuestItem; studentLevel: number }>(
+        `/api/quests/${questId}`,
+    );
+
+    return data.data;
+};
+
+export const updateQuestProgress = async (
+    questId: number,
+    status: QuestProgressStatus,
+): Promise<QuestItem> => patchQuestProgress(questId, status, 'student');
+
+export const submitQuestSubmission = async (
+    questId: number,
+    payload: QuestSubmissionPayload,
+): Promise<QuestItem> => {
+    if (payload.file) {
+        const formData = new FormData();
+        formData.append('type', payload.type);
+        formData.append('file', payload.file);
+
+        const { data } = await axios.post<QuestItem>(`/api/quests/${questId}/submission`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        return data;
+    }
+
+    const { data } = await axios.patch<QuestItem>(`/api/quests/${questId}/submission`, {
+        type: payload.type,
+        url: payload.url,
+        text: payload.text,
+    });
 
     return data;
 };

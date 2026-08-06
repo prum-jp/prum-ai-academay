@@ -1,12 +1,17 @@
 import { reactive } from 'vue';
 import { fetchQuestUnits } from '@/api/quests';
 import { questMessages } from '@/constants/quests';
+import {
+    DEFAULT_UNIT_PROGRESS_FILTER,
+    type UnitProgressFilter,
+} from '@/constants/unitProgress';
 import type { QuestItem, QuestListMeta, QuestUnitItem } from '@/types/quest';
 import { unitContainsQuest, updateUnitQuest } from '@/utils/questUnitProgress';
 
 export interface PersonalUnitSectionState {
     units: QuestUnitItem[];
     meta: QuestListMeta | null;
+    progressFilter: UnitProgressFilter;
     isLoading: boolean;
     error: string;
 }
@@ -14,6 +19,7 @@ export interface PersonalUnitSectionState {
 const createPersonalUnitState = (): PersonalUnitSectionState => ({
     units: [],
     meta: null,
+    progressFilter: DEFAULT_UNIT_PROGRESS_FILTER,
     isLoading: true,
     error: '',
 });
@@ -26,7 +32,7 @@ export function useQuestUnits() {
         personalUnits.error = '';
 
         try {
-            const response = await fetchQuestUnits(page);
+            const response = await fetchQuestUnits(page, personalUnits.progressFilter);
             personalUnits.units = response.data;
             personalUnits.meta = response.meta;
         } catch {
@@ -37,6 +43,16 @@ export function useQuestUnits() {
             personalUnits.isLoading = false;
         }
     };
+
+    const setPersonalProgressFilter = (filter: UnitProgressFilter): void => {
+        personalUnits.progressFilter = filter;
+        void loadPersonalUnits(1);
+    };
+
+    const personalUnitsEmptyMessage = (): string =>
+        personalUnits.progressFilter === DEFAULT_UNIT_PROGRESS_FILTER
+            ? questMessages.emptyUnits
+            : questMessages.emptyFilteredUnits;
 
     const applyQuestUpdate = (updated: QuestItem): void => {
         personalUnits.units = personalUnits.units.map((unit) =>
@@ -53,6 +69,8 @@ export function useQuestUnits() {
     return {
         personalUnits,
         loadPersonalUnits,
+        setPersonalProgressFilter,
+        personalUnitsEmptyMessage,
         applyQuestUpdate,
         applyQuestUpdates,
     };

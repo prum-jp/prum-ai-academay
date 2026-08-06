@@ -16,7 +16,10 @@
                     <header v-if="!headerless" class="rpg-modal-header">
                         <div class="rpg-modal-heading">
                             <i v-if="icon" :class="icon"></i>
-                            <h2 :id="titleId">{{ title }}</h2>
+                            <h2 v-if="!$slots.title" :id="titleId">{{ title }}</h2>
+                            <div v-else :id="titleId" class="rpg-modal-title-slot">
+                                <slot name="title" />
+                            </div>
                         </div>
                         <div class="rpg-modal-toolbar">
                             <slot name="header-actions" />

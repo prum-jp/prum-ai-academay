@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class QuestUnit extends Model
@@ -34,5 +35,16 @@ class QuestUnit extends Model
     public function quests(): HasMany
     {
         return $this->hasMany(Quest::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function curricula(): BelongsToMany
+    {
+        return $this->belongsToMany(Curriculum::class, 'curriculum_quest_units')
+            ->withPivot('sort_order');
+    }
+
+    public function studentAssignments(): HasMany
+    {
+        return $this->hasMany(StudentQuestUnitAssignment::class);
     }
 }

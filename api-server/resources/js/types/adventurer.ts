@@ -1,10 +1,7 @@
 export interface AdventurerStats {
-    presentation: number;
-    communication: number;
-    problemFinding: number;
-    aiAffinity: number;
-    action: number;
-    support: number;
+    businessSkill: number;
+    humanSkill: number;
+    conceptualSkill: number;
 }
 
 export interface AdventurerProfile {
@@ -19,8 +16,8 @@ export interface AdventurerProfile {
     levelTitle: string;
     total: number;
     progressPercent: number;
+    xpCurrentLevelMin: number;
+    xpNextLevelMin: number | null;
     earnedBadgeCount: number;
     totalBadgeCount: number;
 }
-
-export type SoundType = 'click' | 'level-up' | 'down';

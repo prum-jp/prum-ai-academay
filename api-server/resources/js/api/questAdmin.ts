@@ -2,11 +2,13 @@ import axios from 'axios';
 import type {
     CreateMentorQuestPayload,
     CreateMentorQuestUnitPayload,
+    MentorQuestDetail,
     MentorQuestItem,
     MentorQuestListResponse,
     MentorQuestUnitDetail,
     MentorQuestUnitItem,
     MentorQuestUnitListResponse,
+    UpdateMentorPersonalQuestPayload,
     UpdateMentorQuestPayload,
     UpdateMentorQuestUnitPayload,
 } from '@/types/questAdmin';
@@ -42,6 +44,10 @@ export const createMentorQuestUnit = async (
     );
 
     return data.data;
+};
+
+export const reorderMentorQuestUnits = async (unitIds: number[]): Promise<void> => {
+    await axios.put('/api/mentor/quest-units/reorder', { unitIds });
 };
 
 export const createMentorQuest = async (
@@ -80,6 +86,24 @@ export const deleteMentorQuestUnit = async (id: number): Promise<void> => {
     await axios.delete(`/api/mentor/quest-units/${id}`);
 };
 
+export const fetchMentorQuestDetail = async (id: number): Promise<MentorQuestDetail> => {
+    const { data } = await axios.get<{ data: MentorQuestDetail }>(`/api/mentor/quests/${id}`);
+
+    return data.data;
+};
+
+export const updateMentorPersonalQuest = async (
+    id: number,
+    payload: UpdateMentorPersonalQuestPayload,
+): Promise<MentorQuestDetail> => {
+    const { data } = await axios.put<{ data: MentorQuestDetail }>(
+        `/api/mentor/quests/${id}/personal`,
+        payload,
+    );
+
+    return data.data;
+};
+
 export const updateMentorQuest = async (
     id: number,
     payload: UpdateMentorQuestPayload,
@@ -94,18 +118,6 @@ export const updateMentorQuest = async (
 
 export const deleteMentorQuest = async (id: number): Promise<void> => {
     await axios.delete(`/api/mentor/quests/${id}`);
-};
-
-export const publishMentorQuestUnit = async (
-    id: number,
-    isPublished: boolean,
-): Promise<MentorQuestUnitItem> => {
-    const { data } = await axios.patch<{ data: MentorQuestUnitItem }>(
-        `/api/mentor/quest-units/${id}/publish`,
-        { isPublished },
-    );
-
-    return data.data;
 };
 
 export const publishMentorQuest = async (

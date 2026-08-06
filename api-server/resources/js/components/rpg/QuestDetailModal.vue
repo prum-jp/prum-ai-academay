@@ -1,10 +1,21 @@
 <template>
     <RpgModal
         :open="Boolean(quest)"
-        :title="quest?.title ?? questDetailConfig.fallbackTitle"
         :icon="questDetailConfig.modalIcon"
         @close="$emit('close')"
     >
+        <template #title>
+            <RouterLink
+                v-if="quest"
+                class="quest-sheet-detail-link quest-modal-title-link"
+                :to="{ name: 'student-quest-detail', params: { questId: quest.id } }"
+                @click.stop
+            >
+                {{ quest.title }}
+            </RouterLink>
+            <span v-else>{{ questDetailConfig.fallbackTitle }}</span>
+        </template>
+
         <template v-if="quest">
             <div class="quest-detail">
                 <QuestDetailMeta
@@ -28,7 +39,7 @@
                     v-if="hasRewards"
                     :section="questDetailConfig.sections.rewards"
                     :reward-text="quest.rewardText"
-                    :rewards="quest.rewards"
+                    :skill-grants="quest.skillGrants"
                     :empty-message="questDetailConfig.emptyRewards"
                 />
 
@@ -40,6 +51,15 @@
         </template>
 
         <template #footer>
+            <RouterLink
+                v-if="quest"
+                class="quest-sheet-detail-link quest-modal-footer-link"
+                :to="{ name: 'student-quest-detail', params: { questId: quest.id } }"
+                @click="$emit('close')"
+            >
+                <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                {{ questSheetConfig.openDetailLink }}
+            </RouterLink>
             <RpgButton icon="fa-solid fa-door-closed" @click="$emit('close')">
                 {{ questDetailConfig.closeLabel }}
             </RpgButton>
@@ -49,7 +69,9 @@
 
 <script setup lang="ts">
 import { toRef } from 'vue';
+import { RouterLink } from 'vue-router';
 import type { QuestItem } from '@/types/quest';
+import { questSheetConfig } from '@/constants/questSheet';
 import { useQuestDetail } from '@/composables/useQuestDetail';
 import RpgModal from '@/components/rpg/RpgModal.vue';
 import RpgButton from '@/components/rpg/RpgButton.vue';

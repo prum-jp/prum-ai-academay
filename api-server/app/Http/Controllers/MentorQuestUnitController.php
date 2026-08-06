@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReorderMentorQuestUnitsRequest;
 use App\Http\Requests\StoreMentorQuestUnitRequest;
 use App\Http\Requests\UpdateMentorQuestUnitRequest;
 use App\Http\Resources\MentorQuestUnitDetailResource;
@@ -41,7 +42,10 @@ class MentorQuestUnitController extends Controller
 
     public function show(QuestUnit $questUnit): JsonResponse
     {
-        $questUnit->load(['rewards', 'quests' => fn ($query) => $query->orderBy('sort_order')->orderBy('id')]);
+        $questUnit->load([
+            'rewards',
+            'quests' => fn ($query) => $query->with('rewards')->orderBy('sort_order')->orderBy('id'),
+        ]);
 
         return response()->json([
             'data' => (new MentorQuestUnitDetailResource($questUnit))->resolve(),
@@ -57,25 +61,20 @@ class MentorQuestUnitController extends Controller
         ], 201);
     }
 
-    public function update(UpdateMentorQuestUnitRequest $request, QuestUnit $questUnit): JsonResponse
+    public function reorder(ReorderMentorQuestUnitsRequest $request): JsonResponse
     {
-        $unit = $this->mentorQuestUnitRegistrar->update($questUnit, $request->validated());
+        $this->mentorQuestUnitRegistrar->reorder($request->validated('unitIds'));
 
         return response()->json([
-            'data' => (new MentorQuestUnitResource($unit))->resolve(),
+            'data' => [
+                'success' => true,
+            ],
         ]);
     }
 
-    public function publish(Request $request, QuestUnit $questUnit): JsonResponse
+    public function update(UpdateMentorQuestUnitRequest $request, QuestUnit $questUnit): JsonResponse
     {
-        $validated = $request->validate([
-            'isPublished' => ['required', 'boolean'],
-        ]);
-
-        $unit = $this->mentorQuestUnitRegistrar->setPublished(
-            $questUnit,
-            (bool) $validated['isPublished'],
-        );
+        $unit = $this->mentorQuestUnitRegistrar->update($questUnit, $request->validated());
 
         return response()->json([
             'data' => (new MentorQuestUnitResource($unit))->resolve(),

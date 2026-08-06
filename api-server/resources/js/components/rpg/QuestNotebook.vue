@@ -6,18 +6,23 @@
             :icon="personalDefinition.icon"
             :meta="personalUnits.meta"
             :is-empty="personalUnits.units.length === 0"
-            :empty-message="questMessages.emptyUnits"
+            :empty-message="personalUnitsEmptyMessage()"
             :is-loading="personalUnits.isLoading"
             :error="personalUnits.error"
             @page-change="loadPersonalUnits"
         >
+            <template #filters>
+                <QuestUnitProgressFilter
+                    :model-value="personalUnits.progressFilter"
+                    @update:model-value="setPersonalProgressFilter"
+                />
+            </template>
+
             <QuestUnitCard
                 v-for="unit in personalUnits.units"
                 :key="unit.id"
                 :unit="unit"
-                :disabled="isUpdating"
                 @open="() => openUnit(unit)"
-                @toggle="() => handleUnitToggle(unit)"
             />
         </QuestBoardSection>
 
@@ -37,19 +42,11 @@
                 v-for="quest in sections[definition.type].quests"
                 :key="quest.id"
                 :quest="quest"
-                show-checkbox
-                :disabled="isUpdating"
-                @toggle="() => handleToggle(definition.type, quest)"
                 @open="() => openDetail(quest)"
             />
         </QuestBoardSection>
 
-        <QuestUnitModal
-            :unit="selectedUnit"
-            :is-updating="isUpdating"
-            @close="closeUnit"
-            @toggle="handlePersonalToggle"
-        />
+        <QuestUnitModal :unit="selectedUnit" @close="closeUnit" />
 
         <QuestDetailModal :quest="selectedQuest" @close="closeDetail" />
     </div>
@@ -63,20 +60,19 @@ import QuestDetailModal from '@/components/rpg/QuestDetailModal.vue';
 import QuestItemCard from '@/components/rpg/QuestItemCard.vue';
 import QuestUnitCard from '@/components/rpg/QuestUnitCard.vue';
 import QuestUnitModal from '@/components/rpg/QuestUnitModal.vue';
+import QuestUnitProgressFilter from '@/components/rpg/QuestUnitProgressFilter.vue';
 
 const {
     questSectionDefinitions,
     personalDefinition,
     personalUnits,
     sections,
-    isUpdating,
     selectedQuest,
     selectedUnit,
     loadPersonalUnits,
+    setPersonalProgressFilter,
+    personalUnitsEmptyMessage,
     loadSection,
-    handleToggle,
-    handlePersonalToggle,
-    handleUnitToggle,
     openDetail,
     openUnit,
     closeDetail,

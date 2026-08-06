@@ -1,0 +1,189 @@
+.app-nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    margin-left: 6px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--yellow-accent);
+    color: var(--bg-dark);
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.mentor-notification-table-wrap {
+    overflow-x: auto;
+}
+
+.mentor-notification-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.mentor-notification-table th,
+.mentor-notification-table td {
+    padding: 12px 14px;
+    border-bottom: 2px solid #111;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.mentor-notification-table th {
+    background: #fff3e6;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.mentor-notification-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.mentor-notification-name-link {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--orange-main);
+    font: inherit;
+    font-weight: 900;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.mentor-notification-name-link:hover:not(:disabled) {
+    color: #c2410c;
+}
+
+.mentor-notification-name-link:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+@media (max-width: 640px) {
+    .mentor-notification-table th,
+    .mentor-notification-table td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+}
+
+.app-nav-user-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.student-notification-bell {
+    position: relative;
+}
+
+.student-notification-trigger {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.student-notification-trigger:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.student-notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--yellow-accent);
+    color: var(--bg-dark);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 16px;
+    text-align: center;
+}
+
+.student-notification-panel {
+    width: min(360px, calc(100vw - 24px));
+    border: 2px solid #111;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+}
+
+.student-notification-panel-header {
+    padding: 10px 14px;
+    background: #e85d04;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.student-notification-panel-empty,
+.student-notification-panel-error {
+    margin: 0;
+    padding: 16px 14px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.student-notification-panel-error {
+    color: #c0392b;
+}
+
+.student-notification-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.student-notification-item {
+    width: 100%;
+    padding: 12px 14px;
+    border: 0;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+}
+
+.student-notification-item:hover {
+    background: #fff9f0;
+}
+
+.student-notification-list li:last-child .student-notification-item {
+    border-bottom: 0;
+}
+
+.student-notification-item-message {
+    display: block;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.6;
+    color: var(--text-dark);
+}
+
+.student-notification-item-time {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #777;
+}

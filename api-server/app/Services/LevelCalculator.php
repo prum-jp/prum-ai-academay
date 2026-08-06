@@ -4,61 +4,86 @@ namespace App\Services;
 
 class LevelCalculator
 {
+    public const MAX_LEVEL = 15;
+
     /**
-     * @var array<int, array{min: int, max: int|null, title: string}>
+     * @var array<int, string>
      */
-    private const LEVELS = [
-        1 => ['min' => 0, 'max' => 4, 'title' => '駆け出し勇者'],
-        2 => ['min' => 5, 'max' => 11, 'title' => '見習い魔法使い'],
-        3 => ['min' => 12, 'max' => 21, 'title' => '学びの探検家'],
-        4 => ['min' => 22, 'max' => 34, 'title' => '自走の魔術師'],
-        5 => ['min' => 35, 'max' => 49, 'title' => 'AIバトラー'],
-        6 => ['min' => 50, 'max' => null, 'title' => '爆速の賢者'],
+    private const TITLES = [
+        1 => 'ビギナー I',
+        2 => 'ビギナー II',
+        3 => 'ビギナー III',
+        4 => 'ビギナー IV',
+        5 => 'プレイヤー I',
+        6 => 'プレイヤー II',
+        7 => 'プレイヤー III',
+        8 => 'プレイヤー IV',
+        9 => 'エキスパート I',
+        10 => 'エキスパート II',
+        11 => 'エキスパート III',
+        12 => 'エキスパート IV',
+        13 => 'マスター I',
+        14 => 'マスター II',
+        15 => 'マスター III',
     ];
 
     /**
-     * @return array{level: int, title: string, level_title: string, total: int, progress_percent: float}
+     * @return array{
+     *     level: int,
+     *     title: string,
+     *     level_title: string,
+     *     total: int,
+     *     progress_percent: float,
+     *     xp_current_level_min: int,
+     *     xp_next_level_min: int|null
+     * }
      */
-    public function calculate(int $total): array
+    public function calculate(int $totalXp): array
     {
+        $totalXp = max(0, $totalXp);
         $level = 1;
 
-        foreach (self::LEVELS as $candidateLevel => $definition) {
-            $min = $definition['min'];
-            $max = $definition['max'];
-
-            if ($total >= $min && ($max === null || $total <= $max)) {
+        for ($candidateLevel = self::MAX_LEVEL; $candidateLevel >= 1; $candidateLevel--) {
+            if ($totalXp >= $this->cumulativeXpForLevel($candidateLevel)) {
                 $level = $candidateLevel;
                 break;
             }
         }
 
-        $title = self::LEVELS[$level]['title'];
+        $title = self::TITLES[$level];
+        $currentMin = $this->cumulativeXpForLevel($level);
+        $nextMin = $level < self::MAX_LEVEL ? $this->cumulativeXpForLevel($level + 1) : null;
 
         return [
             'level' => $level,
             'title' => $title,
-            'level_title' => sprintf('LV.%d %s', $level, $title),
-            'total' => $total,
-            'progress_percent' => $this->progressPercent($total, $level),
+            'level_title' => sprintf('Lv.%d %s', $level, $title),
+            'total' => $totalXp,
+            'progress_percent' => $this->progressPercent($totalXp, $level, $currentMin, $nextMin),
+            'xp_current_level_min' => $currentMin,
+            'xp_next_level_min' => $nextMin,
         ];
     }
 
-    private function progressPercent(int $total, int $level): float
+    public function cumulativeXpForLevel(int $level): int
     {
-        if ($level >= 6) {
+        $level = max(1, min(self::MAX_LEVEL, $level));
+
+        return ($level - 1) ** 3;
+    }
+
+    private function progressPercent(int $totalXp, int $level, int $currentMin, ?int $nextMin): float
+    {
+        if ($level >= self::MAX_LEVEL || $nextMin === null) {
             return 100.0;
         }
 
-        $currentMin = self::LEVELS[$level]['min'];
-        $nextMin = self::LEVELS[$level + 1]['min'];
         $range = $nextMin - $currentMin;
-
         if ($range <= 0) {
             return 100.0;
         }
 
-        $progress = (($total - $currentMin) / $range) * 100;
+        $progress = (($totalXp - $currentMin) / $range) * 100;
 
         return round(min(100, max(0, $progress)), 1);
     }

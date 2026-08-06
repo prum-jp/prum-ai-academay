@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMentorQuestRequest;
+use App\Http\Requests\UpdateMentorPersonalQuestRequest;
 use App\Http\Requests\UpdateMentorQuestRequest;
+use App\Http\Resources\MentorQuestDetailResource;
 use App\Http\Resources\MentorQuestResource;
 use App\Models\Quest;
 use App\Services\MentorQuestCatalogService;
@@ -44,6 +46,15 @@ class MentorQuestController extends Controller
         ]);
     }
 
+    public function show(Quest $quest): JsonResponse
+    {
+        $quest->load(['rewards', 'tool', 'questUnit']);
+
+        return response()->json([
+            'data' => (new MentorQuestDetailResource($quest))->resolve(),
+        ]);
+    }
+
     public function store(StoreMentorQuestRequest $request): JsonResponse
     {
         $quest = $this->mentorQuestRegistrar->register($request->validated());
@@ -55,12 +66,29 @@ class MentorQuestController extends Controller
 
     public function update(UpdateMentorQuestRequest $request, Quest $quest): JsonResponse
     {
+        if ($quest->type === Quest::TYPE_PERSONAL) {
+            abort(404);
+        }
+
         $this->ensureBoardQuest($quest);
 
         $updated = $this->mentorQuestRegistrar->update($quest, $request->validated());
 
         return response()->json([
             'data' => (new MentorQuestResource($updated))->resolve(),
+        ]);
+    }
+
+    public function updatePersonal(UpdateMentorPersonalQuestRequest $request, Quest $quest): JsonResponse
+    {
+        if ($quest->type !== Quest::TYPE_PERSONAL || $quest->quest_unit_id === null) {
+            abort(404);
+        }
+
+        $updated = $this->mentorQuestRegistrar->updatePersonal($quest, $request->validated());
+
+        return response()->json([
+            'data' => (new MentorQuestDetailResource($updated))->resolve(),
         ]);
     }
 

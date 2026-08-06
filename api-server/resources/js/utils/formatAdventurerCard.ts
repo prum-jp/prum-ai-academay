@@ -1,19 +1,19 @@
 import type { AdventurerProfile, AdventurerStats } from '@/types/adventurer';
 
 const toStars = (value: number): string => {
-    return value > 0 ? '★'.repeat(value) : '☆';
+    return value > 0 ? '★'.repeat(Math.min(value, 10)) : '☆';
 };
 
 export const formatAdventurerCard = (profile: AdventurerProfile): string => {
-    const name = profile.name || '未設定の勇者';
+    const name = profile.name || '未設定';
     const background = profile.background || '未設定';
     const hobby = profile.hobby || '未設定';
-    const weapon = profile.weaponSkill || 'これから入手！';
-    const spell = profile.spellGoal || 'これから習得！';
+    const weapon = profile.weaponSkill || '未設定';
+    const spell = profile.spellGoal || '未設定';
     const stats: AdventurerStats = profile.stats;
 
     return `┌──────────────────────────┐
-   ★ 冒険者カード ★
+   ★ 受講者カード ★
 └──────────────────────────┘
 【名前】 ${name}
 【称号】 ${profile.levelTitle}
@@ -21,20 +21,16 @@ export const formatAdventurerCard = (profile: AdventurerProfile): string => {
 【前職】 ${background}
 【趣味】 ${hobby}
 
-【装備スキル】
-⚔️ 武器(今できること):
+今できること / 得意な業務:
 ${weapon}
 
-🔮 呪文(学びたいAI魔法):
+習得したいAIスキル:
 ${spell}
 
-【ビジネス戦闘力】
-プレゼン：${toStars(stats.presentation)} (${stats.presentation})
-コミュ力：${toStars(stats.communication)} (${stats.communication})
-課題発見：${toStars(stats.problemFinding)} (${stats.problemFinding})
-AI親和性：${toStars(stats.aiAffinity)} (${stats.aiAffinity})
-行動力　：${toStars(stats.action)} (${stats.action})
-お助け力：${toStars(stats.support)} (${stats.support})
+【スキル】
+ビジネス：${toStars(stats.businessSkill)} (${stats.businessSkill})
+ヒューマン：${toStars(stats.humanSkill)} (${stats.humanSkill})
+コンセプチュアル：${toStars(stats.conceptualSkill)} (${stats.conceptualSkill})
 ────────────────────────────
-PRUM AI Academy で「爆速」でレベルアップ中！`;
+PRUM AI Academy 受講中`;
 };

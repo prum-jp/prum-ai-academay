@@ -1,12 +1,12 @@
 <template>
     <div class="login-stage">
         <GameWindow
-            title="冒険者ログイン"
+            title="ログイン"
             subtitle="PRUM AI ACADEMY / LOGIN"
             icon="fa-solid fa-key"
             single-column
         >
-            <RpgCard title="ギルド受付" icon="fa-solid fa-door-open">
+            <RpgCard title="ログイン情報" icon="fa-solid fa-door-open">
                 <form class="login-form" @submit.prevent="handleLogin">
                     <div class="input-group">
                         <label for="login-email">メールアドレス</label>

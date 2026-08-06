@@ -28,7 +28,7 @@ class MentorQuestImportService
         $toolCodes = $this->toolResolver->loadToolCodeMap();
 
         return array_map(function (array $item) use ($toolCodes): array {
-            $preview = $this->enricher->enrichItem($item, false, $toolCodes);
+            $preview = $this->enricher->enrichItem($item, toolCodes: $toolCodes);
             $preview['errors'] = $this->validator->validateItem($preview);
             unset($preview['_batchUnitTitles']);
 
@@ -47,7 +47,7 @@ class MentorQuestImportService
         $batchUnitTitles = $this->validator->collectBatchUnitTitles($items);
 
         $enrichedItems = array_map(function (array $item) use ($toolCodes): array {
-            $enriched = $this->enricher->enrichItem($item, true, $toolCodes);
+            $enriched = $this->enricher->enrichItem($item, toolCodes: $toolCodes);
             unset($enriched['_batchUnitTitles']);
 
             return $enriched;

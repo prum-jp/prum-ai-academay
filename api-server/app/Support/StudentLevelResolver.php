@@ -4,24 +4,19 @@ namespace App\Support;
 
 use App\Models\User;
 use App\Services\LevelCalculator;
+use App\Services\StudentExperienceService;
 
 class StudentLevelResolver
 {
     public function __construct(
         private readonly LevelCalculator $levelCalculator,
+        private readonly StudentExperienceService $studentExperienceService,
     ) {}
 
     public function resolve(User $user): int
     {
-        $user->loadMissing('studentStat');
-        $stat = $user->studentStat;
-        $total = (int) ($stat?->stat_presentation ?? 0)
-            + (int) ($stat?->stat_communication ?? 0)
-            + (int) ($stat?->stat_problem_finding ?? 0)
-            + (int) ($stat?->stat_ai_affinity ?? 0)
-            + (int) ($stat?->stat_action ?? 0)
-            + (int) ($stat?->stat_support ?? 0);
+        $totalXp = $this->studentExperienceService->totalXp($user);
 
-        return (int) $this->levelCalculator->calculate($total)['level'];
+        return (int) $this->levelCalculator->calculate($totalXp)['level'];
     }
 }

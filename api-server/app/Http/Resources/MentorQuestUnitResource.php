@@ -23,7 +23,7 @@ class MentorQuestUnitResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description ?? '',
             'sortOrder' => (int) $this->sort_order,
-            'rewardText' => $this->reward_text ?? '',
+            'rewardText' => '',
             'rewards' => $this->whenLoaded('rewards', function () {
                 return $this->rewards->map(fn ($reward) => [
                     'stat' => $reward->stat,

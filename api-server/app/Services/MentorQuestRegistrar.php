@@ -3,10 +3,16 @@
 namespace App\Services;
 
 use App\Models\Quest;
+use App\Support\QuestDifficulty;
+use App\Support\QuestTier;
 use Illuminate\Support\Facades\DB;
 
 class MentorQuestRegistrar
 {
+    public function __construct(
+        private readonly QuestSkillGrantSync $questSkillGrantSync,
+    ) {}
+
     /**
      * @param  array{
      *     type: string,
@@ -17,13 +23,16 @@ class MentorQuestRegistrar
      *     unlockLevel?: int|null,
      *     rewardText?: string|null,
      *     badgeLabel?: string|null,
-     *     rewards?: list<array{stat: string, points: int}>
+     *     difficulty?: int|null,
+     *     skillGrants?: list<string>
      * }  $payload
      */
     public function register(array $payload): Quest
     {
         return DB::transaction(function () use ($payload): Quest {
             $type = $payload['type'];
+
+            $difficulty = QuestDifficulty::normalize($payload['difficulty'] ?? null);
 
             $quest = Quest::query()->create([
                 'title' => $payload['title'],
@@ -36,6 +45,8 @@ class MentorQuestRegistrar
                 'unlock_level' => $payload['unlockLevel'] ?? null,
                 'reward_text' => $payload['rewardText'] ?? '',
                 'badge_label' => $payload['badgeLabel'] ?? null,
+                'difficulty' => $difficulty,
+                'experience_points' => QuestDifficulty::experiencePoints($difficulty),
                 'brand_label' => null,
                 'sort_order' => ((int) Quest::query()
                     ->where('type', $type)
@@ -46,12 +57,7 @@ class MentorQuestRegistrar
                 'ends_at' => now()->addMonths(2)->toDateString(),
             ]);
 
-            foreach ($payload['rewards'] ?? [] as $reward) {
-                $quest->rewards()->create([
-                    'stat' => $reward['stat'],
-                    'points' => $reward['points'],
-                ]);
-            }
+            $this->questSkillGrantSync->syncForQuest($quest, $payload['skillGrants'] ?? []);
 
             return $quest->load('rewards');
         });
@@ -66,12 +72,15 @@ class MentorQuestRegistrar
      *     unlockLevel?: int|null,
      *     rewardText?: string|null,
      *     badgeLabel?: string|null,
-     *     rewards?: list<array{stat: string, points: int}>
+     *     difficulty?: int|null,
+     *     skillGrants?: list<string>
      * }  $payload
      */
     public function update(Quest $quest, array $payload): Quest
     {
         return DB::transaction(function () use ($quest, $payload): Quest {
+            $difficulty = QuestDifficulty::normalize($payload['difficulty'] ?? null);
+
             $quest->update([
                 'title' => $payload['title'],
                 'description' => $payload['description'] ?? '',
@@ -80,18 +89,50 @@ class MentorQuestRegistrar
                 'unlock_level' => $payload['unlockLevel'] ?? null,
                 'reward_text' => $payload['rewardText'] ?? '',
                 'badge_label' => $payload['badgeLabel'] ?? null,
+                'difficulty' => $difficulty,
+                'experience_points' => QuestDifficulty::experiencePoints($difficulty),
             ]);
 
-            $quest->rewards()->delete();
-            foreach ($payload['rewards'] ?? [] as $reward) {
-                $quest->rewards()->create([
-                    'stat' => $reward['stat'],
-                    'points' => $reward['points'],
-                ]);
-            }
+            $this->questSkillGrantSync->syncForQuest($quest, $payload['skillGrants'] ?? []);
 
             return $quest->fresh(['rewards']);
         });
+    }
+
+    /**
+     * @param  array{
+     *     title: string,
+     *     description?: string|null,
+     *     clearCondition?: string|null,
+     *     toolId?: int|null,
+     *     estimatedDuration?: string|null,
+     *     difficulty?: int|null,
+     *     skillGrants?: list<string>,
+     *     questTier?: string|null
+     * }  $payload
+     */
+    public function updatePersonal(Quest $quest, array $payload): Quest
+    {
+        $difficulty = QuestDifficulty::normalize($payload['difficulty'] ?? null);
+
+        $attributes = [
+            'title' => $payload['title'],
+            'description' => $payload['description'] ?? '',
+            'clear_condition' => $payload['clearCondition'] ?? '',
+            'tool_id' => $payload['toolId'] ?? null,
+            'estimated_duration' => ($payload['estimatedDuration'] ?? null) !== null && $payload['estimatedDuration'] !== ''
+                ? (string) $payload['estimatedDuration']
+                : null,
+            'difficulty' => $difficulty,
+            'experience_points' => QuestDifficulty::experiencePoints($difficulty),
+        ];
+        QuestTier::applyToAttributes($attributes, $payload['questTier'] ?? QuestTier::LOW);
+
+        $quest->update($attributes);
+
+        $this->questSkillGrantSync->syncForQuest($quest, $payload['skillGrants'] ?? []);
+
+        return $quest->fresh(['tool', 'questUnit', 'rewards']);
     }
 
     public function setPublished(Quest $quest, bool $isPublished): Quest

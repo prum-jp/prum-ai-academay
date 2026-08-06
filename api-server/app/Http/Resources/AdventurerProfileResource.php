@@ -2,10 +2,9 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Badge;
-use App\Models\StudentBadge;
 use App\Models\User;
 use App\Services\LevelCalculator;
+use App\Services\StudentExperienceService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +19,7 @@ class AdventurerProfileResource extends JsonResource
     public function __construct(
         User $resource,
         private readonly LevelCalculator $levelCalculator,
+        private readonly StudentExperienceService $studentExperienceService,
     ) {
         parent::__construct($resource);
     }
@@ -33,15 +33,13 @@ class AdventurerProfileResource extends JsonResource
         $stat = $this->studentStat;
 
         $stats = [
-            'presentation' => (int) ($stat?->stat_presentation ?? 0),
-            'communication' => (int) ($stat?->stat_communication ?? 0),
-            'problemFinding' => (int) ($stat?->stat_problem_finding ?? 0),
-            'aiAffinity' => (int) ($stat?->stat_ai_affinity ?? 0),
-            'action' => (int) ($stat?->stat_action ?? 0),
-            'support' => (int) ($stat?->stat_support ?? 0),
+            'businessSkill' => (int) ($stat?->stat_business_skill ?? 0),
+            'humanSkill' => (int) ($stat?->stat_human_skill ?? 0),
+            'conceptualSkill' => (int) ($stat?->stat_conceptual_skill ?? 0),
         ];
 
-        $level = $this->levelCalculator->calculate(array_sum($stats));
+        $totalXp = $this->studentExperienceService->totalXp($this->resource);
+        $level = $this->levelCalculator->calculate($totalXp);
 
         $avatarPath = $profile?->avatar_path;
 
@@ -57,8 +55,13 @@ class AdventurerProfileResource extends JsonResource
             'levelTitle' => $level['level_title'],
             'total' => $level['total'],
             'progressPercent' => $level['progress_percent'],
-            'earnedBadgeCount' => StudentBadge::query()->where('user_id', $this->id)->count(),
-            'totalBadgeCount' => Badge::query()->count(),
+            'xpCurrentLevelMin' => $level['xp_current_level_min'],
+            'xpNextLevelMin' => $level['xp_next_level_min'],
+            // TODO: 後に機能追加 — 実績バッジ獲得数
+            'earnedBadgeCount' => 0,
+            'totalBadgeCount' => 0,
+            // 'earnedBadgeCount' => StudentBadge::query()->where('user_id', $this->id)->count(),
+            // 'totalBadgeCount' => Badge::query()->count(),
         ];
     }
 }

@@ -1,44 +1,52 @@
 /**
  * CSV 列定義（quests テーブル対応）。
  *
- * | CSV列     | DB / アプリ           |
- * |----------|----------------------|
- * | No        | クエスト sort_order（優先） |
- * | Unit      | ユニット sort_order   |
- * | Quest     | クエスト sort_order（No が空のとき） |
- * | Unit概要   | ユニット description（任意） |
- * | 内容      | クエスト description / ユニット概要のフォールバック |
- * | 目的      | description 内【目的】 |
- * | 完了条件   | clear_condition      |
- * | 所要時間   | estimated_duration   |
+ * | CSV列           | DB / アプリ                    |
+ * |----------------|-------------------------------|
+ * | No             | クエスト sort_order（優先）      |
+ * | Unit           | ユニット sort_order             |
+ * | Quest          | クエスト sort_order（No 空時）   |
+ * | MUST           | is_required（◯=必須、空欄=任意） |
+ * | Todo           | プレビュー表示のみ               |
+ * | Unit名         | ユニット title                  |
+ * | Quest名        | クエスト title                  |
+ * | 概要           | overview（列そのまま保持）       |
+ * | 目的           | purpose（列そのまま保持）        |
+ * | 提出物         | deliverable（列そのまま保持）    |
+ * | ツール         | tool                          |
+ * | レベル         | difficulty（★1〜5）            |
+ * | 64             | 無視                           |
+ * | 完了条件       | completionCondition           |
+ * | ビジネス戦闘力等 | skillGrants（値ありで付与）     |
+ * | ヒューマン戦闘力等 | skillGrants（値ありで付与）   |
+ * | コンセプチュアル戦闘力等 | skillGrants（値ありで付与） |
  *
- * 内容に【提出物】がある場合、完了条件列が空ならそこから自動分割する。
- * 難度は DB 未対応（プレビューのみ）。
+ * Quest名が空の行はユニット定義（Unit名 + Unit）のみ。
  */
 export const questImportCsvColumns = [
     'No',
     'Unit',
     'Quest',
-    'To do',
+    'MUST',
+    'Todo',
     'Unit名',
     'Quest名',
-    '内容',
+    '概要',
     '目的',
-    '完了条件',
+    '提出物',
     'ツール',
-    '難度',
-    '所要時間',
+    'レベル',
+    '64',
+    '完了条件',
+    'ビジネス戦闘力',
+    'ヒューマン戦闘力',
+    'コンセプチュアル戦闘力',
 ] as const;
 
 export const questImportActionLabels = {
     create: '新規',
     update: '更新',
     unchanged: '変化なし',
-} as const;
-
-export const questImportPublishLabels = {
-    on: '公開',
-    off: '非公開',
 } as const;
 
 export const questImportKindLabels: Record<string, string> = {
@@ -53,20 +61,24 @@ export const questImportModalConfig = {
     icon: 'fa-solid fa-file-csv',
     bulkButtonLabel: '一括登録',
     uploadLabel: 'CSVファイル',
+    defaultQuestTierLabel: 'クエスト段階',
+    defaultQuestTierHint:
+        'CSVにクエスト段階列がない行は、ここで選んだ段階（低・中・高・エキスパート）を適用します。',
     uploadHint:
-        'UTF-8 の CSV を選択してください。並び順はクエストが No、ユニットが Unit（なければ最小 No）に対応します。',
+        'UTF-8 の CSV を選択してください。並び順はクエストが No、ユニットが Unit（なければ最小 No）に対応します。概要などにリンクを入れる場合は、スプレッドシートの「リンク挿入」ではなく [表示名](URL) とセルに直接入力してください（CSV では URL が失われます）。',
     cancelLabel: 'キャンセル',
     backLabel: 'ファイル選択に戻る',
-    applyLabel: '反映する',
-    applyingLabel: '反映中...',
+    assignLabel: '割り当てする',
+    assigningLabel: '割り当て中...',
+    assignModalDescription:
+        'CSVの内容を登録し、個人ユニットをどの受講生に割り当てるか選んでください。',
     previewLoadingLabel: 'プレビューを生成しています...',
-    publishAllOnLabel: 'すべて公開',
-    publishAllOffLabel: 'すべて非公開',
 } as const;
 
 export const questImportMessages = {
     previewFailed: 'プレビューの生成に失敗しました。',
     applyFailed: '一括登録の反映に失敗しました。',
+    assignFailed: '一括登録後の割り当てに失敗しました。',
     applySuccess: 'CSV一括登録を反映しました！',
     emptyFile: '取り込める行がありません。',
     hasErrors: 'エラーがある行があります。修正または削除してから反映してください。',
@@ -87,15 +99,20 @@ export const questImportFieldLabels = {
     csvNo: 'No',
     unitSortOrder: 'Unit',
     sortOrder: 'Quest',
-    todoNote: 'To do',
+    todoNote: 'Todo',
     unitTitle: 'Unit名',
     title: 'Quest名',
-    description: '概要（内容）',
+    overview: '概要',
+    description: '概要',
+    purpose: '目的',
+    deliverable: '提出物',
+    completionCondition: '完了条件',
     clearCondition: '完了条件',
     toolCode: 'ツール',
-    estimatedDuration: '所要時間',
-    difficulty: '難度',
-    isPublished: '公開',
+    difficulty: 'レベル',
+    experiencePoints: 'XP',
+    questTier: 'クエスト段階',
+    isRequired: 'MUST',
     childQuests: '含まれるクエスト',
     expandLabel: '編集/詳細',
     collapseLabel: '閉じる',

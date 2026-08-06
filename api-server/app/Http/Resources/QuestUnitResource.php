@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\QuestUnit;
+use App\Support\QuestUnitProgressStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -34,9 +35,9 @@ class QuestUnitResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
-            'description' => $this->description ?? '',
+            'description' => '',
             'sortOrder' => (int) $this->sort_order,
-            'rewardText' => $this->reward_text ?? '',
+            'rewardText' => '',
             'rewards' => $this->whenLoaded('rewards', function () {
                 return $this->rewards->map(fn ($reward) => [
                     'stat' => $reward->stat,
@@ -47,6 +48,7 @@ class QuestUnitResource extends JsonResource
             'completedCount' => $completedCount,
             'totalCount' => $totalCount,
             'isCompleted' => $totalCount > 0 && $completedCount === $totalCount,
+            'progressStatus' => QuestUnitProgressStatus::resolveFromQuests($questItems),
         ];
     }
 }

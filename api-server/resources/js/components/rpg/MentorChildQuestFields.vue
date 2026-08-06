@@ -22,12 +22,6 @@
                     >
                         {{ mentorChildQuestFormLabels.remove }}
                     </button>
-                    <MentorPublishToggle
-                        v-model="quest.isPublished"
-                        on-label="公開"
-                        off-label="非公開"
-                        :disabled="disabled"
-                    />
                 </div>
             </div>
 
@@ -81,6 +75,41 @@
                     </option>
                 </select>
             </div>
+
+            <div class="input-group">
+                <label :for="`child-difficulty-${index}`">{{ questSheetConfig.metaLabels.difficulty }}</label>
+                <input
+                    :id="`child-difficulty-${index}`"
+                    v-model.number="quest.difficulty"
+                    type="number"
+                    min="1"
+                    max="5"
+                    :placeholder="mentorChildQuestFormLabels.difficultyPlaceholder"
+                    :disabled="disabled"
+                />
+            </div>
+
+            <div class="input-group">
+                <label :for="`child-tier-${index}`">{{ mentorChildQuestFormLabels.questTier }}</label>
+                <select
+                    :id="`child-tier-${index}`"
+                    v-model="quest.questTier"
+                    :disabled="disabled"
+                >
+                    <option
+                        v-for="option in QUEST_TIER_OPTIONS"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}（{{ option.requirement }}）
+                    </option>
+                </select>
+            </div>
+
+            <QuestSkillGrantFields
+                v-model="quest.skillGrants"
+                :disabled="disabled"
+            />
         </div>
 
         <button
@@ -98,7 +127,9 @@
 <script setup lang="ts">
 import type { MentorChildQuestInput, MentorTool } from '@/types/questAdmin';
 import { mentorChildQuestFormLabels } from '@/constants/questAdmin';
-import MentorPublishToggle from '@/components/rpg/MentorPublishToggle.vue';
+import { QUEST_TIER_OPTIONS } from '@/constants/questTier';
+import { questSheetConfig } from '@/constants/questSheet';
+import QuestSkillGrantFields from '@/components/rpg/QuestSkillGrantFields.vue';
 
 defineProps<{
     quests: MentorChildQuestInput[];

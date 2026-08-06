@@ -9,12 +9,12 @@ export interface QuestSectionDefinition {
 export const questSectionDefinitions: QuestSectionDefinition[] = [
     {
         type: 'personal',
-        title: '個人クエスト（千本ノック・成果物）',
+        title: '個人クエスト',
         icon: 'fa-solid fa-seedling',
     },
     {
         type: 'team',
-        title: 'チームクエスト（自発募集・要チェックイン）',
+        title: 'チームクエスト',
         icon: 'fa-solid fa-handshake-angle',
     },
     {
@@ -29,6 +29,8 @@ export const questMessages = {
     loadUnitsFailed: 'ユニットの取得に失敗しました。',
     emptyQuests: 'クエストはまだありません。',
     emptyUnits: 'ユニットはまだありません。',
+    emptyFilteredUnits: '条件に一致するユニットがありません。',
+    unitProgressFilterLabel: '表示',
     loading: '読み込み中...',
 } as const;
 
@@ -63,15 +65,8 @@ export const questUnitConfig = {
     defaultToolIcon: 'fa-solid fa-wand-magic-sparkles',
 } as const;
 
-/** ユニット報酬モーダル用の成長ステータス表示名 */
-export const growthStatLabels: Record<string, string> = {
-    aiAffinity: 'プロンプト解像度',
-    problemFinding: 'セルフ・デバッグ力',
-    communication: 'コミュニケーション',
-    presentation: 'プレゼン力',
-    action: 'まず動く行動力',
-    support: 'サポート精神',
-};
+/** ユニットモーダル用のスキル表示名（後方互換） */
+export { skillLabels as growthStatLabels } from '@/constants/skills';
 
 export type NonPersonalQuestType = Exclude<QuestType, 'personal'>;
 

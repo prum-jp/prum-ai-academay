@@ -1,4 +1,7 @@
 import type { QuestItem, QuestUnitItem } from '@/types/quest';
+import type { QuestProgressStatus } from '@/constants/questProgress';
+import type { UnitProgressStatus } from '@/constants/unitProgress';
+import { resolveUnitProgressStatus } from '@/constants/unitProgress';
 
 export const recalculateUnitProgress = (unit: QuestUnitItem): QuestUnitItem => {
     const completedCount = unit.quests.filter((quest) => quest.isCompleted).length;
@@ -9,6 +12,7 @@ export const recalculateUnitProgress = (unit: QuestUnitItem): QuestUnitItem => {
         completedCount,
         totalCount,
         isCompleted: totalCount > 0 && completedCount === totalCount,
+        progressStatus: resolveUnitProgressStatus(unit.quests),
     };
 };
 
@@ -21,15 +25,19 @@ export const updateUnitQuest = (unit: QuestUnitItem, updated: QuestItem): QuestU
         quests: unit.quests.map((quest) => (quest.id === updated.id ? updated : quest)),
     });
 
-export const getQuestsToToggleForUnit = (
+export const getQuestsToUpdateForUnit = (
     unit: QuestUnitItem,
-): { targetCompleted: boolean; quests: QuestItem[] } => {
-    const targetCompleted = !unit.isCompleted;
+): { targetStatus: QuestProgressStatus; quests: QuestItem[] } => {
+    const targetStatus: QuestProgressStatus = unit.isCompleted ? 'not_started' : 'completed';
 
     return {
-        targetCompleted,
+        targetStatus,
         quests: unit.quests.filter(
-            (quest) => !quest.isLocked && quest.isCompleted !== targetCompleted,
+            (quest) =>
+                !quest.isLocked &&
+                (targetStatus === 'completed'
+                    ? quest.progressStatus !== 'completed'
+                    : quest.progressStatus !== 'not_started'),
         ),
     };
 };

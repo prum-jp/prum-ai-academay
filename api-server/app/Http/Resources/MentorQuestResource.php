@@ -33,6 +33,8 @@ class MentorQuestResource extends JsonResource
                 ])->values();
             }, []),
             'badgeLabel' => $this->badge_label,
+            'difficulty' => $this->difficulty,
+            'experiencePoints' => (int) ($this->experience_points ?? 0),
             'clearCondition' => $this->clear_condition ?? '',
             'sortOrder' => (int) $this->sort_order,
             'startsAt' => $this->starts_at?->toDateString(),

@@ -30,15 +30,6 @@
             />
             <button
                 type="button"
-                class="mentor-quest-admin-action"
-                :disabled="disabled"
-                @click="$emit('edit')"
-            >
-                <i class="fa-solid fa-pen" aria-hidden="true"></i>
-                {{ mentorQuestAdminCardActions.editLabel }}
-            </button>
-            <button
-                type="button"
                 class="mentor-quest-admin-action is-delete"
                 :disabled="disabled"
                 @click="$emit('delete')"
@@ -62,7 +53,6 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-    edit: [];
     delete: [];
     'toggle-publish': [];
 }>();

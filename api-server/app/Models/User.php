@@ -49,6 +49,26 @@ class User extends Authenticatable
         return $this->hasMany(StudentBadge::class);
     }
 
+    public function curriculumAssignments(): HasMany
+    {
+        return $this->hasMany(StudentCurriculumAssignment::class);
+    }
+
+    public function questUnitAssignments(): HasMany
+    {
+        return $this->hasMany(StudentQuestUnitAssignment::class);
+    }
+
+    public function questAssignments(): HasMany
+    {
+        return $this->hasMany(StudentQuestAssignment::class);
+    }
+
+    public function questExclusions(): HasMany
+    {
+        return $this->hasMany(StudentQuestExclusion::class);
+    }
+
     public function isMentor(): bool
     {
         return $this->role === self::ROLE_MENTOR;

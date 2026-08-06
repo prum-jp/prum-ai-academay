@@ -8,18 +8,18 @@ import {
     updateMentorQuestUnit,
 } from '@/api/questAdmin';
 import { mentorQuestAdminMessages } from '@/constants/questAdmin';
+import { createEmptySkillGrants, type SkillKey } from '@/constants/skills';
+import { DEFAULT_QUEST_TIER } from '@/constants/questTier';
 import type {
     MentorChildQuestInput,
     MentorQuestItem,
-    MentorQuestRewardInput,
     MentorQuestUnitItem,
     MentorTool,
 } from '@/types/questAdmin';
-import { useGameAudio } from '@/composables/useGameAudio';
 import { extractApiErrorMessage } from '@/utils/extractApiErrorMessage';
 import { extractApiFieldErrors } from '@/utils/extractApiFieldErrors';
 
-const UNIT_FIELDS = ['title', 'description', 'rewardText'] as const;
+const UNIT_FIELDS = ['title'] as const;
 const QUEST_FIELDS = [
     'title',
     'description',
@@ -27,13 +27,11 @@ const QUEST_FIELDS = [
     'rewardText',
     'badgeLabel',
     'unlockLevel',
+    'difficulty',
 ] as const;
 
 interface UnitEditForm {
     title: string;
-    description: string;
-    rewardText: string;
-    rewards: MentorQuestRewardInput[];
     quests: MentorChildQuestInput[];
 }
 
@@ -45,14 +43,12 @@ interface QuestEditForm {
     unlockLevel: number | null;
     rewardText: string;
     badgeLabel: string;
-    rewards: MentorQuestRewardInput[];
+    difficulty: number | null;
+    skillGrants: SkillKey[];
 }
 
 const createUnitForm = (): UnitEditForm => ({
     title: '',
-    description: '',
-    rewardText: '',
-    rewards: [],
     quests: [],
 });
 
@@ -64,7 +60,8 @@ const createQuestForm = (): QuestEditForm => ({
     unlockLevel: null,
     rewardText: '',
     badgeLabel: '',
-    rewards: [],
+    difficulty: null,
+    skillGrants: createEmptySkillGrants(),
 });
 
 export function useMentorQuestEdit() {
@@ -77,8 +74,6 @@ export function useMentorQuestEdit() {
     const isSubmitting = ref(false);
     const errorMessage = ref('');
     const fieldErrors = reactive<Record<string, string>>({});
-
-    const { playSound } = useGameAudio();
 
     const clearErrors = (): void => {
         errorMessage.value = '';
@@ -110,9 +105,6 @@ export function useMentorQuestEdit() {
         try {
             const detail = await fetchMentorQuestUnitDetail(unit.id);
             unitForm.title = detail.title;
-            unitForm.description = detail.description;
-            unitForm.rewardText = detail.rewardText;
-            unitForm.rewards = detail.rewards.map((reward) => ({ ...reward }));
             unitForm.quests = detail.quests.map((quest) => ({
                 id: quest.id,
                 title: quest.title,
@@ -120,7 +112,9 @@ export function useMentorQuestEdit() {
                 clearCondition: quest.clearCondition,
                 toolId: quest.toolId,
                 sortOrder: quest.sortOrder,
-                isPublished: quest.isPublished,
+                difficulty: quest.difficulty,
+                skillGrants: quest.skillGrants ?? createEmptySkillGrants(),
+                questTier: quest.questTier ?? DEFAULT_QUEST_TIER,
             }));
         } catch {
             errorMessage.value = mentorQuestAdminMessages.loadUnitDetailFailed;
@@ -140,7 +134,8 @@ export function useMentorQuestEdit() {
             unlockLevel: quest.unlockLevel,
             rewardText: quest.rewardText,
             badgeLabel: quest.badgeLabel ?? '',
-            rewards: quest.rewards.map((reward) => ({ ...reward })),
+            difficulty: quest.difficulty ?? null,
+            skillGrants: quest.skillGrants ?? createEmptySkillGrants(),
         });
     };
 
@@ -152,7 +147,9 @@ export function useMentorQuestEdit() {
             clearCondition: '',
             toolId: null,
             sortOrder: unitForm.quests.length + 1,
-            isPublished: true,
+            difficulty: null,
+            skillGrants: createEmptySkillGrants(),
+            questTier: DEFAULT_QUEST_TIER,
         });
     };
 
@@ -171,12 +168,6 @@ export function useMentorQuestEdit() {
         try {
             await updateMentorQuestUnit(editUnitId.value, {
                 title: unitForm.title.trim(),
-                description: unitForm.description.trim(),
-                rewardText: unitForm.rewardText.trim(),
-                rewards: unitForm.rewards.map((reward) => ({
-                    stat: reward.stat,
-                    points: Number(reward.points),
-                })),
                 quests: unitForm.quests.map((quest, index) => ({
                     id: quest.id,
                     title: quest.title.trim(),
@@ -184,13 +175,13 @@ export function useMentorQuestEdit() {
                     clearCondition: quest.clearCondition.trim(),
                     toolId: quest.toolId,
                     sortOrder: index + 1,
-                    isPublished: quest.isPublished,
+                    difficulty: quest.difficulty ?? null,
+                    skillGrants: [...quest.skillGrants],
+                    questTier: quest.questTier,
                 })),
             });
-            playSound('level-up');
             return true;
         } catch (error: unknown) {
-            playSound('down');
             Object.assign(fieldErrors, extractApiFieldErrors(error, UNIT_FIELDS));
             errorMessage.value = extractApiErrorMessage(
                 error,
@@ -220,15 +211,11 @@ export function useMentorQuestEdit() {
                 unlockLevel: questForm.unlockLevel ? Number(questForm.unlockLevel) : null,
                 rewardText: questForm.rewardText.trim(),
                 badgeLabel: questForm.badgeLabel.trim(),
-                rewards: questForm.rewards.map((reward) => ({
-                    stat: reward.stat,
-                    points: Number(reward.points),
-                })),
+                difficulty: questForm.difficulty ?? null,
+                skillGrants: [...questForm.skillGrants],
             });
-            playSound('level-up');
             return true;
         } catch (error: unknown) {
-            playSound('down');
             Object.assign(fieldErrors, extractApiFieldErrors(error, QUEST_FIELDS));
             errorMessage.value = extractApiErrorMessage(
                 error,
@@ -260,7 +247,6 @@ export function useMentorQuestEdit() {
 
 export function useMentorQuestDelete() {
     const isDeleting = ref(false);
-    const { playSound } = useGameAudio();
 
     const removeUnit = async (id: number): Promise<boolean> => {
         if (isDeleting.value) {
@@ -270,10 +256,8 @@ export function useMentorQuestDelete() {
         isDeleting.value = true;
         try {
             await deleteMentorQuestUnit(id);
-            playSound('down');
             return true;
         } catch {
-            playSound('down');
             return false;
         } finally {
             isDeleting.value = false;
@@ -288,10 +272,8 @@ export function useMentorQuestDelete() {
         isDeleting.value = true;
         try {
             await deleteMentorQuest(id);
-            playSound('down');
             return true;
         } catch {
-            playSound('down');
             return false;
         } finally {
             isDeleting.value = false;

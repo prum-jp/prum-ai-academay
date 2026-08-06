@@ -2,7 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Support\GrowthStatKeys;
+use App\Support\QuestTier;
+use App\Support\SkillKeys;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -32,14 +33,14 @@ class MentorQuestImportRequest extends FormRequest
             'items.*.rewardText' => ['nullable', 'string', 'max:500'],
             'items.*.clearCondition' => ['nullable', 'string', 'max:5000'],
             'items.*.estimatedDuration' => ['nullable', 'string', 'max:40'],
+            'items.*.difficulty' => ['nullable', 'integer', 'min:1', 'max:5'],
             'items.*.toolCode' => ['nullable', 'string', 'max:40'],
-            'items.*.rewards' => ['nullable', 'array'],
-            'items.*.rewards.*.stat' => ['required', 'string', Rule::in(GrowthStatKeys::ALL)],
-            'items.*.rewards.*.points' => ['required', 'integer', 'min:1', 'max:99'],
-            'items.*.isPublished' => ['required', 'boolean'],
+            'items.*.skillGrants' => ['nullable', 'array'],
+            'items.*.skillGrants.*' => ['string', Rule::in(SkillKeys::ALL)],
             'items.*.sortOrder' => ['nullable', 'integer', 'min:0'],
             'items.*.isRequired' => ['nullable', 'boolean'],
             'items.*.unlockLevel' => ['nullable', 'integer', 'min:1', 'max:99'],
+            'items.*.questTier' => ['nullable', 'string', Rule::in(QuestTier::ALL)],
             'items.*.badgeLabel' => ['nullable', 'string', 'max:255'],
         ];
     }

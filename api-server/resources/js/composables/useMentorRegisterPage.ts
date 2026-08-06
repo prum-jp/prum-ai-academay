@@ -10,7 +10,7 @@ export function useMentorRegisterPage() {
         showToast.value = true;
         window.setTimeout(() => {
             showToast.value = false;
-            void router.push({ name: 'mentor' });
+            void router.push({ name: 'mentor-quests' });
         }, 900);
     };
 

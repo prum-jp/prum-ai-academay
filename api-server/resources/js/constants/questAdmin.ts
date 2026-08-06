@@ -1,18 +1,49 @@
 import type { MentorQuestCreateType } from '@/types/questAdmin';
 import type { QuestType } from '@/types/quest';
 import { questSectionDefinitions } from '@/constants/quests';
-import { statDefinitions } from '@/constants/stats';
+import { createEmptySkillGrants as emptySkillGrants } from '@/constants/skills';
 
 export const mentorQuestPageConfig = {
-    title: 'クエスト管理',
+    title: '管理 / クエスト管理',
     icon: 'fa-solid fa-scroll',
 } as const;
 
+export const mentorPersonalAssignmentSectionConfig = {
+    title: '個人クエスト',
+    icon: 'fa-solid fa-seedling',
+    description:
+        '受講生ごとに個人ユニットを割り当てます。行末の ⋮ からクエスト割当やクエスト一覧を開けます。',
+    menuLabel: 'メニューを開く',
+    menuAssignLabel: 'クエスト割り当て',
+    menuHomeLabel: '受講者シート',
+    modalTitle: 'クエスト割当',
+    modalDescription:
+        'ユニットをクリックで含まれるクエストを表示できます。バッジをクリックで割当・解除できます。',
+    assignedStatusLabel: '割当済み',
+    unassignedStatusLabel: '未割当',
+    viaCurriculumStatusLabel: 'カリキュラム経由',
+    unitTypeLabel: 'ユニット',
+    childQuestTypeLabel: 'クエスト',
+    emptyChildQuests: '含まれるクエストはまだありません。',
+    assignedSummaryLabel: (assigned: number, total: number): string =>
+        `${assigned} / ${total} 件割当済み`,
+    loadingQuests: 'クエスト一覧を読み込んでいます...',
+    emptyQuests: '登録されている個人ユニットはまだありません。',
+    assignSuccess: '割り当てました！',
+    unassignSuccess: '割当を解除しました。',
+    assignFailed: '割当に失敗しました。',
+    unassignFailed: '割当解除に失敗しました。',
+    viaCurriculumNote: 'カリキュラム経由',
+    dragHandleLabel: 'ユニットの並び替え',
+    reorderFailed: 'ユニットの並び順更新に失敗しました。',
+} as const;
+
 export const mentorQuestBoardCardConfig = {
-    title: 'クエストカタログ',
+    title: 'クエスト管理',
     icon: 'fa-solid fa-map',
     description:
-        '個人ユニット・チーム・特別クエストを確認できます。新規追加からカタログに登録できます。',
+        '個人ユニットは受講生ごとに割り当て、チーム・特別クエストは公開・削除を管理できます。内容の確認・更新はクエストマスタから行えます。',
+    masterLinkLabel: 'クエストマスタ',
     createButtonLabel: '新規追加',
 } as const;
 
@@ -20,6 +51,29 @@ export const mentorQuestCreateModalConfig = {
     title: '新規登録',
     icon: 'fa-solid fa-plus',
     typeLabel: '種別',
+    submitLabel: '登録する',
+    submittingLabel: '登録中...',
+    cancelLabel: 'キャンセル',
+} as const;
+
+export const mentorQuestCreatePageConfig = {
+    title: '管理 / クエスト新規登録',
+    icon: 'fa-solid fa-plus',
+    backLabel: 'クエスト管理に戻る',
+    typeLabel: '種別',
+    submitLabel: '登録する',
+    submittingLabel: '登録中...',
+    cancelLabel: 'キャンセル',
+    rewardsSectionTitle: '付与スキル',
+    addChildQuestLabel: 'クエストを追加する',
+    addedChildQuestsTitle: '追加済みクエスト',
+    childQuestSectionTitle: 'クエスト内容',
+} as const;
+
+export const mentorQuestUnitAssignModalConfig = {
+    title: '反映する受講生',
+    icon: 'fa-solid fa-users',
+    description: '登録したユニットを、どの受講生に割り当てるか選んでください。',
     submitLabel: '登録する',
     submittingLabel: '登録中...',
     cancelLabel: 'キャンセル',
@@ -89,6 +143,8 @@ export const mentorChildQuestFormLabels = {
     clearCondition: '完了条件',
     tool: '使用ツール',
     toolNone: '（なし）',
+    difficultyPlaceholder: '1〜5',
+    questTier: 'クエスト段階',
     add: 'クエストを追加',
     remove: '削除',
     empty: '子クエストはまだありません。「クエストを追加」から登録できます。',
@@ -96,12 +152,10 @@ export const mentorChildQuestFormLabels = {
 
 export const mentorQuestUnitFormLabels = {
     title: 'ユニットタイトル',
-    description: '概要',
-    rewardText: '報酬テキスト（学生向け表示）',
-    rewardsTitle: '成長ステータス報酬',
+    rewardsTitle: '付与スキル',
     addReward: '報酬を追加',
     removeReward: '削除',
-    stat: '成長ステータス',
+    stat: 'スキル',
     points: 'ポイント',
 } as const;
 
@@ -112,30 +166,25 @@ export const mentorQuestFormLabels = {
     rewardText: '報酬テキスト（学生向け表示）',
     badgeLabel: 'バッジラベル',
     unlockLevel: '解放レベル',
+    experiencePoints: '獲得XP',
     isRequired: '必須クエストにする',
-    rewardsTitle: '成長ステータス報酬',
+    rewardsTitle: '付与スキル',
     addReward: '報酬を追加',
     removeReward: '削除',
-    stat: '成長ステータス',
+    stat: 'スキル',
     points: 'ポイント',
 } as const;
 
 export const mentorQuestFormPlaceholders = {
-    unitTitle: '例：千本ノック基礎編',
+    unitTitle: '例：AI基礎編',
     questTitle: '例：チーム：業務効率化ツールを共同作成する',
+    childQuestTitle: '例：Day1 プロンプト基礎',
     description: 'クエストの概要を入力',
     clearCondition: '完了条件を入力',
-    rewardText: '例：AI親和性 +1、課題発見力 +1',
+    rewardText: '例：AIリテラシー、課題発見力',
     badgeLabel: '例：Lv.3以上で開放',
     unlockLevel: '未設定の場合は空欄',
+    experiencePoints: '例: 10',
 } as const;
 
-export const mentorQuestStatOptions = statDefinitions.map((item) => ({
-    value: item.key,
-    label: item.label,
-}));
-
-export const createEmptyReward = () => ({
-    stat: mentorQuestStatOptions[0]?.value ?? 'aiAffinity',
-    points: 1,
-});
+export { emptySkillGrants as createEmptySkillGrants };

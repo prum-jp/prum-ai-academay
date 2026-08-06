@@ -1,4 +1,6 @@
-import type { QuestListMeta, QuestReward, QuestType } from '@/types/quest';
+import type { QuestListMeta, QuestType } from '@/types/quest';
+import type { SkillKey } from '@/constants/skills';
+import type { QuestTier } from '@/constants/questTier';
 
 export type MentorQuestCreateType = 'personal' | 'team' | 'special';
 
@@ -8,7 +10,6 @@ export interface MentorQuestUnitItem {
     description: string;
     sortOrder: number;
     rewardText: string;
-    rewards: QuestReward[];
     questCount: number;
     isPublished: boolean;
 }
@@ -21,8 +22,10 @@ export interface MentorQuestItem {
     isRequired: boolean;
     unlockLevel: number | null;
     rewardText: string;
-    rewards: QuestReward[];
     badgeLabel: string | null;
+    difficulty: number | null;
+    experiencePoints: number;
+    skillGrants: SkillKey[];
     clearCondition: string;
     sortOrder: number;
     startsAt: string | null;
@@ -41,16 +44,21 @@ export interface MentorQuestListResponse {
     meta: QuestListMeta;
 }
 
-export interface MentorQuestRewardInput {
-    stat: string;
-    points: number;
+export interface CreateMentorQuestUnitChildQuestPayload {
+    title: string;
+    description: string;
+    clearCondition: string;
+    toolId: number | null;
+    sortOrder: number;
+    difficulty?: number | null;
+    estimatedDuration?: string;
+    skillGrants?: SkillKey[];
+    questTier?: QuestTier;
 }
 
 export interface CreateMentorQuestUnitPayload {
     title: string;
-    description: string;
-    rewardText: string;
-    rewards: MentorQuestRewardInput[];
+    quests?: CreateMentorQuestUnitChildQuestPayload[];
 }
 
 export interface CreateMentorQuestPayload {
@@ -62,7 +70,8 @@ export interface CreateMentorQuestPayload {
     unlockLevel: number | null;
     rewardText: string;
     badgeLabel: string;
-    rewards: MentorQuestRewardInput[];
+    difficulty: number | null;
+    skillGrants: SkillKey[];
 }
 
 export interface MentorTool {
@@ -79,7 +88,10 @@ export interface MentorChildQuestInput {
     clearCondition: string;
     toolId: number | null;
     sortOrder: number;
-    isPublished: boolean;
+    difficulty?: number | null;
+    estimatedDuration?: string;
+    skillGrants: SkillKey[];
+    questTier: QuestTier;
 }
 
 export interface MentorQuestUnitDetail {
@@ -88,7 +100,6 @@ export interface MentorQuestUnitDetail {
     description: string;
     sortOrder: number;
     rewardText: string;
-    rewards: QuestReward[];
     quests: Array<{
         id: number;
         title: string;
@@ -97,14 +108,16 @@ export interface MentorQuestUnitDetail {
         toolId: number | null;
         sortOrder: number;
         isPublished: boolean;
+        difficulty: number | null;
+        estimatedDuration: string | null;
+        experiencePoints: number;
+        skillGrants: SkillKey[];
+        questTier: QuestTier;
     }>;
 }
 
 export interface UpdateMentorQuestUnitPayload {
     title: string;
-    description: string;
-    rewardText: string;
-    rewards: MentorQuestRewardInput[];
     quests: Array<{
         id: number | null;
         title: string;
@@ -112,8 +125,45 @@ export interface UpdateMentorQuestUnitPayload {
         clearCondition: string;
         toolId: number | null;
         sortOrder: number;
-        isPublished: boolean;
+        difficulty?: number | null;
+        estimatedDuration?: string;
+        skillGrants?: SkillKey[];
+        questTier?: QuestTier;
     }>;
+}
+
+export interface MentorQuestDetail {
+    id: number;
+    title: string;
+    description: string;
+    clearCondition: string;
+    type: QuestType;
+    sortOrder: number;
+    toolId: number | null;
+    tool: { id: number; code: string; name: string } | null;
+    estimatedDuration: string | null;
+    difficulty: number | null;
+    experiencePoints: number;
+    skillGrants: SkillKey[];
+    unitId: number | null;
+    unitTitle?: string | null;
+    isRequired: boolean;
+    unlockLevel: number | null;
+    questTier?: QuestTier;
+    rewardText: string;
+    badgeLabel: string | null;
+    isPublished: boolean;
+}
+
+export interface UpdateMentorPersonalQuestPayload {
+    title: string;
+    description: string;
+    clearCondition: string;
+    toolId: number | null;
+    estimatedDuration: string;
+    difficulty: number | null;
+    skillGrants: SkillKey[];
+    questTier?: QuestTier;
 }
 
 export interface UpdateMentorQuestPayload {
@@ -124,5 +174,6 @@ export interface UpdateMentorQuestPayload {
     unlockLevel: number | null;
     rewardText: string;
     badgeLabel: string;
-    rewards: MentorQuestRewardInput[];
+    difficulty: number | null;
+    skillGrants: SkillKey[];
 }

@@ -1,15 +1,13 @@
 import { computed, ref } from 'vue';
-import type { QuestImportItem, QuestImportMeta } from '@/types/questImport';
+import type { QuestImportApplyResult, QuestImportItem, QuestImportMeta } from '@/types/questImport';
 import { applyQuestImport, previewQuestImport } from '@/api/questImport';
 import { questImportMessages } from '@/constants/questImport';
+import { DEFAULT_QUEST_TIER, type QuestTier } from '@/constants/questTier';
 import {
     applyPreviewResponse,
     computeQuestImportMeta,
     groupImportItemsByUnit,
     parseQuestImportCsv,
-    refreshImportMetaCounts,
-    setAllItemsPublished,
-    syncUnitPublishToItems,
     toImportPayload,
 } from '@/utils/questImport';
 import { extractApiErrorMessage } from '@/utils/extractApiErrorMessage';
@@ -23,6 +21,7 @@ export function useMentorQuestImport() {
     const isLoading = ref(false);
     const isApplying = ref(false);
     const selectedFileName = ref('');
+    const defaultQuestTier = ref<QuestTier>(DEFAULT_QUEST_TIER);
 
     const hasBlockingErrors = computed((): boolean => {
         if (parseErrors.value.length > 0) {
@@ -41,9 +40,11 @@ export function useMentorQuestImport() {
         isLoading.value = false;
         isApplying.value = false;
         selectedFileName.value = '';
+        defaultQuestTier.value = DEFAULT_QUEST_TIER;
     };
 
-    const loadCsvFile = async (file: File): Promise<boolean> => {
+    const loadCsvFile = async (file: File, questTier: QuestTier = defaultQuestTier.value): Promise<boolean> => {
+        defaultQuestTier.value = questTier;
         errorMessage.value = '';
         parseErrors.value = [];
         isLoading.value = true;
@@ -51,7 +52,7 @@ export function useMentorQuestImport() {
 
         try {
             const text = await file.text();
-            const parsed = parseQuestImportCsv(text);
+            const parsed = parseQuestImportCsv(text, { defaultQuestTier: questTier });
             parseErrors.value = parsed.errors;
 
             if (parsed.items.length === 0) {
@@ -60,7 +61,7 @@ export function useMentorQuestImport() {
             }
 
             const preview = await previewQuestImport(toImportPayload(parsed.items));
-            items.value = applyPreviewResponse(preview, parsed.items, true);
+            items.value = applyPreviewResponse(preview, parsed.items);
             meta.value = preview.meta;
             step.value = 'preview';
 
@@ -103,42 +104,32 @@ export function useMentorQuestImport() {
         meta.value = computeQuestImportMeta(items.value);
     };
 
-    const setAllPublished = (isPublished: boolean): void => {
-        items.value = setAllItemsPublished(items.value, isPublished);
-        meta.value = refreshImportMetaCounts(items.value, meta.value);
-    };
-
-    const syncUnitPublish = (unitTitle: string, isPublished: boolean): void => {
-        items.value = syncUnitPublishToItems(items.value, unitTitle, isPublished);
-        meta.value = refreshImportMetaCounts(items.value, meta.value);
-    };
-
-    const apply = async (): Promise<boolean> => {
+    const apply = async (): Promise<QuestImportApplyResult[] | null> => {
         if (items.value.length === 0) {
             errorMessage.value = questImportMessages.emptyFile;
-            return false;
+            return null;
         }
 
         await refreshPreview();
 
         if (hasBlockingErrors.value) {
             errorMessage.value = questImportMessages.hasErrors;
-            return false;
+            return null;
         }
 
         errorMessage.value = '';
         isApplying.value = true;
 
         try {
-            await applyQuestImport(toImportPayload(items.value));
-            return true;
+            const response = await applyQuestImport(toImportPayload(items.value));
+            return response.data;
         } catch (error: unknown) {
             errorMessage.value = extractApiErrorMessage(
                 error,
                 undefined,
                 questImportMessages.applyFailed,
             );
-            return false;
+            return null;
         } finally {
             isApplying.value = false;
         }
@@ -153,12 +144,11 @@ export function useMentorQuestImport() {
         isLoading,
         isApplying,
         selectedFileName,
+        defaultQuestTier,
         hasBlockingErrors,
         reset,
         loadCsvFile,
         removeItem,
-        setAllPublished,
-        syncUnitPublish,
         apply,
     };
 }

@@ -693,39 +693,548 @@ body {
 
 .mentor-student-card {
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 8px 10px;
-    align-items: center;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: stretch;
     width: 100%;
     background: #ffffff;
     border: 2px solid #e8d5c0;
     border-radius: 12px;
     padding: 10px 12px;
-    text-align: left;
-    font: inherit;
-    color: inherit;
-    cursor: pointer;
-    transition: border-color 0.12s ease, background-color 0.12s ease, transform 0.08s ease;
-}
-
-.mentor-student-card:hover:not(:disabled) {
-    border-color: var(--orange-main);
-    background: #fff8f0;
-}
-
-.mentor-student-card:focus-visible {
-    outline: 3px solid var(--orange-main);
-    outline-offset: 3px;
-}
-
-.mentor-student-card:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
 }
 
 .mentor-student-card.is-selected {
     border-color: var(--orange-main);
     background: #fff8f0;
+}
+
+.mentor-student-card-main {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 10px;
+    align-items: center;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.mentor-student-card-main:hover:not(:disabled) {
+    color: inherit;
+}
+
+.mentor-student-card-main:focus-visible {
+    outline: 3px solid var(--orange-main);
+    outline-offset: 3px;
+    border-radius: 8px;
+}
+
+.mentor-student-card-main:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.mentor-student-assignment-btn {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 2px solid #e8d5c0;
+    border-radius: 10px;
+    background: #fff8f0;
+    color: var(--text-dark);
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.mentor-student-assignment-btn:hover:not(:disabled) {
+    border-color: var(--orange-main);
+    background: #fff;
+}
+
+.mentor-student-assignment-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.mentor-assignment-section {
+    margin-bottom: 18px;
+}
+
+.mentor-assignment-section-title {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--text-dark);
+}
+
+.mentor-assignment-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.mentor-assignment-item {
+    margin: 0;
+}
+
+.mentor-assignment-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 2px solid #e8d5c0;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.mentor-assignment-label.is-disabled-via-curriculum {
+    opacity: 0.75;
+    cursor: default;
+}
+
+.mentor-assignment-item-body {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.mentor-assignment-item-body strong {
+    font-size: 13px;
+}
+
+.mentor-assignment-meta,
+.mentor-assignment-description,
+.mentor-assignment-note {
+    font-size: 11px;
+    font-weight: 700;
+    color: #8a5a3a;
+}
+
+.mentor-assignment-badge {
+    display: inline-block;
+    width: fit-content;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f0e8dc;
+    color: #8a5a3a;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.mentor-assignment-empty {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #8a5a3a;
+}
+
+.mentor-curriculum-board-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.mentor-curriculum-board-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mentor-curriculum-form {
+    display: grid;
+    gap: 10px;
+}
+
+.mentor-curriculum-form label,
+.mentor-curriculum-form h4 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.mentor-curriculum-form input,
+.mentor-curriculum-form textarea {
+    width: 100%;
+}
+
+.mentor-assignment-target-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.mentor-assignment-target-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 2px solid #e8d5c0;
+    border-radius: 10px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.mentor-assignment-target-option:has(input:checked) {
+    border-color: var(--orange-main);
+    background: #fff8f0;
+}
+
+.mentor-student-picker {
+    display: grid;
+    gap: 10px;
+}
+
+.mentor-personal-assignment-board {
+    margin-bottom: 18px;
+}
+
+.mentor-personal-assignment-list {
+    display: grid;
+    gap: 10px;
+}
+
+.mentor-personal-assignment-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 2px solid #e8d5c0;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.mentor-personal-assignment-main {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 10px;
+    align-items: center;
+    min-width: 0;
+}
+
+.mentor-quest-unit-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 2px solid #e8d5c0;
+    border-radius: 10px;
+    background: #fff8f0;
+    color: var(--text-dark);
+    cursor: pointer;
+}
+
+.mentor-quest-unit-menu-btn.is-open,
+.mentor-quest-unit-menu-btn:hover:not(:disabled) {
+    border-color: var(--orange-main);
+    background: #fff;
+}
+
+.mentor-quest-unit-menu-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.mentor-quest-unit-menu-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.mentor-quest-unit-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+    list-style: none;
+    margin: 0;
+    padding: 6px;
+    min-width: 168px;
+    border: 2px solid var(--bg-dark);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 4px 4px 0 var(--bg-dark);
+}
+
+.mentor-quest-unit-menu-item {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-dark);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+}
+
+.mentor-quest-unit-menu-item:hover:not(:disabled) {
+    background: #fff4e8;
+    color: var(--orange-main);
+}
+
+.mentor-quest-unit-menu-item:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.mentor-quest-unit-assign-summary {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.mentor-quest-unit-assign-count {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 900;
+    color: var(--orange-main);
+}
+
+.mentor-quest-unit-assign-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.mentor-quest-unit-assign-item {
+    margin: 0;
+}
+
+.mentor-quest-unit-assign-item.is-dragging {
+    opacity: 0.55;
+}
+
+.mentor-quest-unit-assign-item.is-drag-over .mentor-quest-unit-assign-quest {
+    border-color: var(--orange-main);
+    box-shadow: 0 0 0 2px rgb(232 93 4 / 20%);
+}
+
+.mentor-quest-unit-assign-quest {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0;
+    align-items: center;
+    width: 100%;
+    padding: 0;
+    border: 2px solid #e8d5c0;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.mentor-quest-unit-assign-quest.is-expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.mentor-quest-unit-assign-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    width: 36px;
+    border: 0;
+    border-right: 1px solid #e8d5c0;
+    background: #fff8f0;
+    color: #8a5a3a;
+    cursor: grab;
+    font: inherit;
+}
+
+.mentor-quest-unit-assign-drag-handle:active {
+    cursor: grabbing;
+}
+
+.mentor-quest-unit-assign-drag-handle:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.mentor-quest-unit-assign-toggle {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+}
+
+.mentor-quest-unit-assign-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    font-size: 14px;
+    color: #8a5a3a;
+}
+
+.mentor-quest-unit-assign-body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.mentor-quest-unit-assign-type {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #8a5a3a;
+}
+
+.mentor-quest-unit-assign-toggle:hover {
+    color: inherit;
+}
+
+.mentor-quest-unit-assign-quest:hover {
+    border-color: var(--orange-main);
+}
+
+.mentor-quest-unit-assign-quest-name {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-dark);
+}
+
+.mentor-quest-unit-assign-status {
+    flex-shrink: 0;
+    align-self: center;
+    margin: 0 14px 0 0;
+    padding: 4px 10px;
+    border: 0;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.4;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.mentor-quest-unit-assign-status:disabled {
+    opacity: 0.85;
+    cursor: not-allowed;
+}
+
+.mentor-quest-unit-assign-children {
+    padding: 10px 14px 12px 46px;
+    border: 2px solid #e8d5c0;
+    border-top: 0;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    background: #fffaf5;
+}
+
+.mentor-quest-unit-assign-children-empty {
+    margin: 0;
+    font-size: 12px;
+    color: #888;
+}
+
+.mentor-quest-unit-assign-children-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+}
+
+.mentor-quest-unit-assign-children-list .quest-import-unit-divider {
+    margin: 8px 0 4px;
+}
+
+.mentor-quest-unit-assign-child {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.mentor-quest-unit-assign-child-body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.mentor-quest-unit-assign-child .mentor-quest-unit-assign-status {
+    margin-right: 0;
+}
+
+.mentor-quest-unit-assign-child-type {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #8a5a3a;
+}
+
+.mentor-quest-unit-assign-child-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.mentor-quest-unit-assign-child-name-link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.5;
+    color: var(--orange-main);
+    text-align: left;
+    cursor: pointer;
+}
+
+.mentor-quest-unit-assign-child-name-link:hover:not(:disabled) {
+    text-decoration: underline;
+}
+
+.mentor-quest-unit-assign-child-name-link:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.mentor-quest-unit-assign-status.is-unassigned {
+    background: #ececec;
+    color: #777;
+}
+
+.mentor-quest-unit-assign-status.is-assigned {
+    background: #d8f0de;
+    color: #2f6b3f;
+}
+
+.mentor-quest-unit-assign-status.is-via-curriculum {
+    background: #fff0c8;
+    color: #8a6a1a;
 }
 
 .mentor-student-avatar {
@@ -817,10 +1326,12 @@ body {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    min-width: 0;
+    width: 100%;
 }
 
 .mentor-quest-create-form textarea,
-.mentor-quest-create-form select {
+.mentor-quest-create-form select:not(.quest-sheet-create-meta-input) {
     width: 100%;
     padding: 10px 12px;
     border: 3px solid var(--bg-dark);
@@ -892,6 +1403,18 @@ body {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+}
+
+.mentor-quest-unit-assign-modal-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.mentor-quest-unit-assign-modal-footer .btn-rpg,
+.mentor-quest-unit-assign-modal-footer .btn-rpg:disabled {
+    box-shadow: none;
 }
 
 .mentor-quest-admin-actions {
@@ -1186,8 +1709,7 @@ body {
     font-size: 18px;
     font-weight: 900;
     cursor: pointer;
-    box-shadow: 0 6px 0 var(--bg-dark);
-    transition: transform 0.1s, box-shadow 0.1s;
+    transition: transform 0.1s, opacity 0.1s;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1195,23 +1717,23 @@ body {
 }
 
 .btn-rpg:active {
-    transform: translateY(6px);
-    box-shadow: 0 0px 0 var(--bg-dark);
+    transform: translateY(2px);
+    opacity: 0.92;
 }
 
-.audio-toggle {
-    position: absolute;
-    top: 22px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    border: 2px solid #fff;
-    border-radius: 30px;
-    padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 900;
-    cursor: pointer;
-    z-index: 10;
+.btn-rpg.is-tone-orange {
+    background-color: var(--orange-main);
+    color: #ffffff;
+}
+
+.btn-rpg.is-tone-green {
+    background-color: #2ecc71;
+    color: #ffffff;
+}
+
+.btn-rpg.is-tone-red {
+    background-color: #e74c3c;
+    color: #ffffff;
 }
 
 .toast {
@@ -1310,6 +1832,36 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.quest-unit-progress-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 14px;
+}
+
+.quest-unit-progress-filter-btn {
+    border: 2px solid #e8d5c0;
+    border-radius: 999px;
+    background: #fff;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #8a5a3a;
+    cursor: pointer;
+    line-height: 1.3;
+}
+
+.quest-unit-progress-filter-btn:hover {
+    border-color: var(--orange-sub);
+    color: var(--orange-main);
+}
+
+.quest-unit-progress-filter-btn.is-active {
+    border-color: var(--orange-main);
+    background: #fff4ea;
+    color: var(--orange-main);
 }
 
 .quest-item {
@@ -1601,6 +2153,11 @@ body {
     border-top: 3px dashed var(--orange-sub);
 }
 
+.quest-import-upload {
+    display: grid;
+    gap: 14px;
+}
+
 .quest-import-preview-list {
     display: flex;
     flex-direction: column;
@@ -1791,13 +2348,59 @@ body {
     gap: 10px;
 }
 
+.quest-import-row-form .input-group {
+    margin-bottom: 0;
+}
+
+.quest-import-field-preview {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 1px dashed #d8d8d8;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.quest-import-row-form .input-group:last-child {
+    margin-bottom: 0;
+}
+
+.quest-import-checkbox-group {
+    padding: 2px 0;
+}
+
+.quest-import-skill-grants {
+    min-width: 0;
+}
+
+.quest-import-skill-grants .quest-skill-grant-lead {
+    font-size: 15px;
+    font-weight: 900;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+}
+
+.quest-import-row-form select.quest-sheet-create-meta-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
 .quest-import-toggle {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
-    font-weight: 900;
+    font-size: 14px;
+    font-weight: 800;
     color: var(--text-dark);
+    cursor: pointer;
+}
+
+.quest-import-toggle input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--orange-main);
+    flex-shrink: 0;
+    cursor: pointer;
 }
 
 .quest-import-row-meta {
@@ -2082,13 +2685,6 @@ body {
 @media (max-width: 640px) {
     .game-window > header h1 {
         font-size: 20px;
-        padding-right: 70px;
-    }
-
-    .audio-toggle {
-        top: 12px;
-        right: 12px;
-        font-size: 10px;
     }
 
     .badge-icon {

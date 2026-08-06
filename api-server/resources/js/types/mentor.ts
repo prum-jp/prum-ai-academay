@@ -1,3 +1,5 @@
+import type { PaginationMeta } from '@/types/pagination';
+
 export interface MentorStudent {
     id: number;
     name: string;
@@ -8,12 +10,8 @@ export interface MentorStudent {
     isSelected: boolean;
 }
 
-export interface MentorStudentListMeta {
+export interface MentorStudentListMeta extends PaginationMeta {
     selectedStudentId: number | null;
-    currentPage: number;
-    lastPage: number;
-    perPage: number;
-    total: number;
 }
 
 export interface MentorStudentListResponse {

@@ -1,3 +1,4 @@
+// TODO: 後に機能追加 — 実績バッジ API（ルートもコメントアウト中）
 import axios from 'axios';
 import type { BadgeListResponse } from '@/types/badge';
 

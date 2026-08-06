@@ -1,5 +1,5 @@
 <template>
-    <RpgCard title="基本ステータス" icon="fa-solid fa-user-ninja">
+    <RpgCard title="基本情報" icon="fa-solid fa-user-ninja">
         <ProfileAvatarPanel
             :avatar-url="profile.avatarUrl"
             :editable="editable"
@@ -7,20 +7,23 @@
         />
         <EditableField
             v-model="profile.name"
-            label="キャラクター名（本名）"
-            placeholder="勇者ぷるむ"
+            label="受講者名"
+            placeholder="例：山田太郎"
+            :readonly="!editable"
             @blur="$emit('persist')"
         />
         <EditableField
             v-model="profile.background"
             label="前職 / バックグラウンド"
             placeholder="例：住宅営業職（交渉が得意）"
+            :readonly="!editable"
             @blur="$emit('persist')"
         />
         <EditableField
             v-model="profile.hobby"
             label="趣味 / ハマっていること"
             placeholder="例：サウナ / カフェ巡り"
+            :readonly="!editable"
             @blur="$emit('persist')"
         />
         <p v-if="saveStatusLabel" class="save-status" :class="`is-${saveStatus}`">

@@ -29,11 +29,14 @@ class Quest extends Model
         'description',
         'clear_condition',
         'estimated_duration',
+        'difficulty',
+        'experience_points',
         'type',
         'quest_unit_id',
         'tool_id',
         'is_required',
         'unlock_level',
+        'quest_tier',
         'reward_text',
         'badge_label',
         'brand_label',
@@ -51,6 +54,8 @@ class Quest extends Model
         return [
             'is_required' => 'boolean',
             'unlock_level' => 'integer',
+            'difficulty' => 'integer',
+            'experience_points' => 'integer',
             'starts_at' => 'date',
             'ends_at' => 'date',
             'sort_order' => 'integer',
@@ -86,5 +91,15 @@ class Quest extends Model
     public function progressFor(User $user): HasOne
     {
         return $this->hasOne(StudentQuestProgress::class)->where('user_id', $user->id);
+    }
+
+    public function studentAssignments(): HasMany
+    {
+        return $this->hasMany(StudentQuestAssignment::class);
+    }
+
+    public function exclusions(): HasMany
+    {
+        return $this->hasMany(StudentQuestExclusion::class);
     }
 }

@@ -1,20 +1,8 @@
 import { onMounted, reactive } from 'vue';
-import {
-    fetchMentorQuests,
-    fetchMentorQuestUnits,
-    publishMentorQuest,
-    publishMentorQuestUnit,
-} from '@/api/questAdmin';
+import { fetchMentorQuests, publishMentorQuest } from '@/api/questAdmin';
 import { mentorQuestAdminMessages } from '@/constants/questAdmin';
-import type { MentorQuestItem, MentorQuestUnitItem } from '@/types/questAdmin';
+import type { MentorQuestItem } from '@/types/questAdmin';
 import type { QuestListMeta } from '@/types/quest';
-
-interface MentorUnitSectionState {
-    units: MentorQuestUnitItem[];
-    meta: QuestListMeta | null;
-    isLoading: boolean;
-    error: string;
-}
 
 interface MentorQuestSectionState {
     quests: MentorQuestItem[];
@@ -22,13 +10,6 @@ interface MentorQuestSectionState {
     isLoading: boolean;
     error: string;
 }
-
-const createUnitSectionState = (): MentorUnitSectionState => ({
-    units: [],
-    meta: null,
-    isLoading: true,
-    error: '',
-});
 
 const createQuestSectionState = (): MentorQuestSectionState => ({
     quests: [],
@@ -38,28 +19,10 @@ const createQuestSectionState = (): MentorQuestSectionState => ({
 });
 
 export function useMentorQuestCatalog() {
-    const personalUnits = reactive(createUnitSectionState());
     const sections = reactive({
         team: createQuestSectionState(),
         special: createQuestSectionState(),
     });
-
-    const loadPersonalUnits = async (page = 1): Promise<void> => {
-        personalUnits.isLoading = true;
-        personalUnits.error = '';
-
-        try {
-            const response = await fetchMentorQuestUnits(page);
-            personalUnits.units = response.data;
-            personalUnits.meta = response.meta;
-        } catch {
-            personalUnits.error = mentorQuestAdminMessages.loadUnitsFailed;
-            personalUnits.units = [];
-            personalUnits.meta = null;
-        } finally {
-            personalUnits.isLoading = false;
-        }
-    };
 
     const loadSection = async (type: 'team' | 'special', page = 1): Promise<void> => {
         const section = sections[type];
@@ -76,22 +39,6 @@ export function useMentorQuestCatalog() {
             section.meta = null;
         } finally {
             section.isLoading = false;
-        }
-    };
-
-    const setUnitPublished = async (
-        unit: MentorQuestUnitItem,
-        isPublished: boolean,
-    ): Promise<boolean> => {
-        try {
-            const updated = await publishMentorQuestUnit(unit.id, isPublished);
-            const target = personalUnits.units.find((item) => item.id === unit.id);
-            if (target) {
-                target.isPublished = updated.isPublished;
-            }
-            return true;
-        } catch {
-            return false;
         }
     };
 
@@ -112,25 +59,20 @@ export function useMentorQuestCatalog() {
         }
     };
 
-    const reloadAll = (): void => {
-        void loadPersonalUnits(personalUnits.meta?.currentPage ?? 1);
+    const reloadTeamSections = (): void => {
         void loadSection('team', sections.team.meta?.currentPage ?? 1);
         void loadSection('special', sections.special.meta?.currentPage ?? 1);
     };
 
     onMounted(() => {
-        void loadPersonalUnits();
         void loadSection('team');
         void loadSection('special');
     });
 
     return {
-        personalUnits,
         sections,
-        loadPersonalUnits,
         loadSection,
-        setUnitPublished,
         setQuestPublished,
-        reloadAll,
+        reloadTeamSections,
     };
 }

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AdventurerProfile, AdventurerStats } from '@/types/adventurer';
+import type { AdventurerProfile } from '@/types/adventurer';
 
 export interface StudentProfileUpdatePayload {
     name: string;
@@ -7,11 +7,6 @@ export interface StudentProfileUpdatePayload {
     hobby: string;
     weaponSkill: string;
     spellGoal: string;
-}
-
-export interface StudentStatUpdatePayload {
-    stat: keyof AdventurerStats;
-    delta: 1 | -1;
 }
 
 export const fetchStudentProfile = async (): Promise<AdventurerProfile> => {
@@ -24,14 +19,6 @@ export const updateStudentProfile = async (
     payload: StudentProfileUpdatePayload,
 ): Promise<AdventurerProfile> => {
     const { data } = await axios.patch<AdventurerProfile>('/api/profile', payload);
-
-    return data;
-};
-
-export const updateStudentStat = async (
-    payload: StudentStatUpdatePayload,
-): Promise<AdventurerProfile> => {
-    const { data } = await axios.patch<AdventurerProfile>('/api/profile/stats', payload);
 
     return data;
 };

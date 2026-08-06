@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Quest;
-use App\Support\GrowthStatKeys;
+use App\Support\SkillKeys;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -39,9 +39,9 @@ class StoreMentorQuestRequest extends FormRequest
             'unlockLevel' => ['nullable', 'integer', 'min:1', 'max:99'],
             'rewardText' => ['nullable', 'string', 'max:500'],
             'badgeLabel' => ['nullable', 'string', 'max:255'],
-            'rewards' => ['nullable', 'array'],
-            'rewards.*.stat' => ['required', 'string', Rule::in(GrowthStatKeys::ALL)],
-            'rewards.*.points' => ['required', 'integer', 'min:1', 'max:99'],
+            'difficulty' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'skillGrants' => ['nullable', 'array'],
+            'skillGrants.*' => ['string', Rule::in(SkillKeys::ALL)],
         ];
     }
 
@@ -55,8 +55,7 @@ class StoreMentorQuestRequest extends FormRequest
             'type.in' => 'クエスト種別の指定が不正です。',
             'title.required' => 'クエストタイトルを入力してください。',
             'title.unique' => '同じ種別に同タイトルのクエストが既に存在します。',
-            'rewards.*.stat.required' => '成長ステータスを選択してください。',
-            'rewards.*.points.required' => 'ポイントを入力してください。',
+            'skillGrants.*.in' => '付与スキルの指定が不正です。',
         ];
     }
 }

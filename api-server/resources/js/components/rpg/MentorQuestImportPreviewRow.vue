@@ -8,12 +8,6 @@
                 </span>
             </div>
             <div class="quest-import-row-actions">
-                <MentorPublishToggle
-                    :model-value="item.isPublished"
-                    :on-label="questImportPublishLabels.on"
-                    :off-label="questImportPublishLabels.off"
-                    @update:model-value="onPublishChange"
-                />
                 <button type="button" class="quest-import-link" @click="expanded = !expanded">
                     {{
                         expanded
@@ -62,14 +56,59 @@
                 </ul>
             </div>
 
-            <div class="input-group">
-                <label>{{ questImportFieldLabels.description }}</label>
-                <textarea v-model="item.description" rows="4"></textarea>
+            <div v-if="item.kind === 'child_quest'" class="quest-import-checkbox-group">
+                <label class="quest-import-toggle">
+                    <input v-model="item.isRequired" type="checkbox" />
+                    {{ questImportFieldLabels.isRequired }}
+                </label>
             </div>
 
-            <div v-if="item.kind === 'child_quest'" class="input-group">
-                <label>{{ questImportFieldLabels.clearCondition }}</label>
-                <textarea v-model="item.clearCondition" rows="3"></textarea>
+            <template v-if="item.kind === 'child_quest'">
+                <div class="input-group">
+                    <label>{{ questImportFieldLabels.overview }}</label>
+                    <textarea v-model="item.overview" rows="4"></textarea>
+                    <div v-if="(item.overview ?? '').trim()" class="quest-import-field-preview">
+                        <QuestSheetSectionText :body="item.overview ?? ''" />
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>{{ questImportFieldLabels.purpose }}</label>
+                    <textarea v-model="item.purpose" rows="3"></textarea>
+                    <div v-if="(item.purpose ?? '').trim()" class="quest-import-field-preview">
+                        <QuestSheetSectionText :body="item.purpose ?? ''" />
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>{{ questImportFieldLabels.deliverable }}</label>
+                    <textarea v-model="item.deliverable" rows="3"></textarea>
+                    <div v-if="(item.deliverable ?? '').trim()" class="quest-import-field-preview">
+                        <QuestSheetSectionText :body="item.deliverable ?? ''" />
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>{{ questImportFieldLabels.completionCondition }}</label>
+                    <textarea v-model="item.completionCondition" rows="3"></textarea>
+                    <div
+                        v-if="(item.completionCondition ?? '').trim()"
+                        class="quest-import-field-preview"
+                    >
+                        <QuestSheetSectionText :body="item.completionCondition ?? ''" />
+                    </div>
+                </div>
+            </template>
+
+            <div
+                v-else-if="item.kind === 'team_quest' || item.kind === 'special_quest'"
+                class="input-group"
+            >
+                <label>{{ questImportFieldLabels.description }}</label>
+                <textarea v-model="item.description" rows="4"></textarea>
+                <div v-if="(item.description ?? '').trim()" class="quest-import-field-preview">
+                    <QuestSheetSectionText :body="item.description ?? ''" />
+                </div>
             </div>
 
             <div v-if="item.kind === 'child_quest'" class="input-group">
@@ -78,15 +117,34 @@
             </div>
 
             <div v-if="item.kind === 'child_quest'" class="input-group">
-                <label>{{ questImportFieldLabels.estimatedDuration }}</label>
-                <input v-model="item.estimatedDuration" type="text" placeholder="例: 20分" />
+                <label>{{ questImportFieldLabels.questTier }}</label>
+                <select v-model="childQuestTier" class="quest-sheet-create-meta-input">
+                    <option
+                        v-for="option in QUEST_TIER_OPTIONS"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}（{{ option.requirement }}）
+                    </option>
+                </select>
+            </div>
+
+            <div
+                v-if="item.kind === 'child_quest' || item.kind === 'team_quest' || item.kind === 'special_quest'"
+                class="quest-import-skill-grants"
+            >
+                <QuestSkillGrantFields v-model="item.skillGrants" />
             </div>
 
             <div v-if="item.difficulty" class="quest-import-row-meta">
                 <div class="input-group">
                     <label>{{ questImportFieldLabels.difficulty }}</label>
-                    <input :value="item.difficulty" type="text" readonly class="is-readonly" />
-                    <p class="quest-import-row-note">※ 難度は DB 未対応のため取り込みません</p>
+                    <input
+                        :value="formatDifficulty(item.difficulty)"
+                        type="text"
+                        readonly
+                        class="is-readonly"
+                    />
                 </div>
             </div>
         </div>
@@ -100,11 +158,12 @@ import {
     questImportActionLabels,
     questImportFieldLabels,
     questImportKindLabels,
-    questImportPublishLabels,
 } from '@/constants/questImport';
-import { applyPublishChange } from '@/utils/questImport/publish';
+import { DEFAULT_QUEST_TIER, QUEST_TIER_OPTIONS } from '@/constants/questTier';
 import { sortChildQuests } from '@/utils/questImport/sortComparators';
-import MentorPublishToggle from '@/components/rpg/MentorPublishToggle.vue';
+import { formatQuestDifficultyStars } from '@/utils/questDifficulty';
+import QuestSheetSectionText from '@/components/rpg/QuestSheetSectionText.vue';
+import QuestSkillGrantFields from '@/components/rpg/QuestSkillGrantFields.vue';
 
 const item = defineModel<QuestImportItem>({ required: true });
 
@@ -114,10 +173,16 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     remove: [];
-    syncUnitPublish: [unitTitle: string, isPublished: boolean];
 }>();
 
 const expanded = ref(false);
+
+const childQuestTier = computed({
+    get: () => item.value.questTier ?? DEFAULT_QUEST_TIER,
+    set: (value) => {
+        item.value.questTier = value;
+    },
+});
 
 const kindLabel = computed(() => questImportKindLabels[item.value.kind] ?? item.value.kind);
 const hasError = computed(() => (item.value.errors?.length ?? 0) > 0);
@@ -125,15 +190,6 @@ const actionLabel = computed((): string => {
     const action: QuestImportAction = item.value.action ?? 'create';
     return questImportActionLabels[action];
 });
-
-const onPublishChange = (value: boolean): void => {
-    if (item.value.kind === 'personal_unit') {
-        emit('syncUnitPublish', item.value.title, value);
-        return;
-    }
-
-    Object.assign(item.value, applyPublishChange(item.value, value));
-};
 
 const childQuestTitles = computed((): string[] => {
     if (item.value.kind !== 'personal_unit') {
@@ -146,4 +202,7 @@ const childQuestTitles = computed((): string[] => {
         ),
     ).map((row) => row.title);
 });
+
+const formatDifficulty = (difficulty: number | undefined): string =>
+    formatQuestDifficultyStars(difficulty);
 </script>

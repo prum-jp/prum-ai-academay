@@ -1,22 +1,9 @@
 <template>
-    <article class="quest-item" :class="{ 'is-locked': quest.isLocked, 'is-completed': quest.isCompleted }">
-        <QuestCheckbox
-            v-if="showCheckbox"
-            :checked="quest.isCompleted"
-            :disabled="quest.isLocked || disabled"
-            @toggle="$emit('toggle')"
-        />
-
+    <article class="quest-item" :class="itemClass">
         <button type="button" class="quest-body" @click="$emit('open')">
             <div class="quest-title-row">
                 <h4 class="quest-title">{{ quest.title }}</h4>
-                <span
-                    v-if="quest.badgeLabel"
-                    class="quest-badge"
-                    :class="badgeVariant"
-                >
-                    {{ quest.badgeLabel }}
-                </span>
+                <QuestProgressStatusBadge :status="quest.progressStatus" size="sm" compact />
             </div>
 
             <p v-if="quest.rewardText && !hideReward" class="quest-reward">
@@ -34,28 +21,27 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { QuestItem } from '@/types/quest';
-import { getQuestBadgeVariant, showParticipantCount } from '@/utils/questDisplay';
-import QuestCheckbox from '@/components/rpg/QuestCheckbox.vue';
+import { showParticipantCount } from '@/utils/questDisplay';
+import QuestProgressStatusBadge from '@/components/rpg/QuestProgressStatusBadge.vue';
 
 const props = withDefaults(
     defineProps<{
         quest: QuestItem;
-        showCheckbox?: boolean;
         hideReward?: boolean;
-        disabled?: boolean;
     }>(),
     {
-        showCheckbox: false,
         hideReward: false,
-        disabled: false,
     },
 );
 
 defineEmits<{
-    toggle: [];
     open: [];
 }>();
 
-const badgeVariant = computed(() => getQuestBadgeVariant(props.quest));
 const showParticipants = computed(() => showParticipantCount(props.quest));
+
+const itemClass = computed(() => ({
+    'is-locked': props.quest.isLocked,
+    'is-completed': props.quest.progressStatus === 'completed',
+}));
 </script>

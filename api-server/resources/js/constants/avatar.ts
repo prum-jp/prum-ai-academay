@@ -11,8 +11,8 @@ export const AVATAR_ALLOWED_MIME_TYPES = [
 export const AVATAR_ACCEPT = AVATAR_ALLOWED_MIME_TYPES.join(',');
 
 export const avatarConfig = {
-    hint: `※お気に入りの顔写真を設定しよう！（${AVATAR_MAX_SIZE_LABEL}以下）`,
-    placeholderLabel: 'HERO',
+    hint: `※プロフィール用の顔写真を設定できます（${AVATAR_MAX_SIZE_LABEL}以下）`,
+    placeholderLabel: '未設定',
 } as const;
 
 export const avatarMessages = {

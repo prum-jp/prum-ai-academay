@@ -1,5 +1,20 @@
-/** RFC4180 風 CSV パーサ（引用符・改行対応） */
+const detectDelimiter = (firstLine: string): string => {
+    const tabs = (firstLine.match(/\t/g) ?? []).length;
+    const commas = (firstLine.match(/,/g) ?? []).length;
+
+    if (tabs > 0 && tabs >= commas) {
+        return '\t';
+    }
+
+    return ',';
+};
+
+/** RFC4180 風 CSV/TSV パーサ（引用符・改行対応） */
 export const parseCsvText = (text: string): string[][] => {
+    const normalized = text.replace(/^\uFEFF/, '');
+    const firstLine = normalized.split(/\r?\n/, 1)[0] ?? '';
+    const delimiter = detectDelimiter(firstLine);
+
     const rows: string[][] = [];
     let row: string[] = [];
     let cell = '';
@@ -18,8 +33,6 @@ export const parseCsvText = (text: string): string[][] => {
         row = [];
     };
 
-    const normalized = text.replace(/^\uFEFF/, '');
-
     for (let index = 0; index < normalized.length; index += 1) {
         const char = normalized[index];
         const next = normalized[index + 1];
@@ -34,7 +47,7 @@ export const parseCsvText = (text: string): string[][] => {
             continue;
         }
 
-        if (!inQuotes && char === ',') {
+        if (!inQuotes && char === delimiter) {
             pushCell();
             continue;
         }

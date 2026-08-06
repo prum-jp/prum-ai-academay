@@ -3,6 +3,8 @@
 namespace App\Http\Resources;
 
 use App\Models\QuestUnit;
+use App\Support\QuestSkillGrantPresenter;
+use App\Support\QuestTier;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,7 +25,7 @@ class MentorQuestUnitDetailResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description ?? '',
             'sortOrder' => (int) $this->sort_order,
-            'rewardText' => $this->reward_text ?? '',
+            'rewardText' => '',
             'rewards' => $this->whenLoaded('rewards', function () {
                 return $this->rewards->map(fn ($reward) => [
                     'stat' => $reward->stat,
@@ -39,6 +41,16 @@ class MentorQuestUnitDetailResource extends JsonResource
                     'toolId' => $quest->tool_id,
                     'sortOrder' => (int) $quest->sort_order,
                     'isPublished' => (bool) $quest->is_published,
+                    'difficulty' => $quest->difficulty,
+                    'estimatedDuration' => $quest->estimated_duration,
+                    'experiencePoints' => (int) ($quest->experience_points ?? 0),
+                    'questTier' => QuestTier::resolve(
+                        $quest->quest_tier,
+                        $quest->unlock_level !== null ? (int) $quest->unlock_level : null,
+                    ),
+                    'skillGrants' => $quest->relationLoaded('rewards')
+                        ? QuestSkillGrantPresenter::fromQuest($quest)
+                        : [],
                 ])->values();
             }, []),
         ];

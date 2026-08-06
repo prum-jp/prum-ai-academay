@@ -14,12 +14,9 @@
                 :title="currentPage.windowTitle"
                 :subtitle="currentPage.subtitle"
                 :icon="currentPage.icon"
-                :single-column="currentPage.singleColumn"
+                :single-column="layoutSingleColumn"
                 :plain-content="currentPage.plainContent"
             >
-                <template #toolbar>
-                    <AudioToggle :enabled="audioEnabled" @toggle="toggleAudio" />
-                </template>
                 <RouterView />
             </GameWindow>
         </div>
@@ -32,23 +29,29 @@
 import { computed } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 import { studentPages } from '@/constants/studentPages';
-import { useGameAudio } from '@/composables/useGameAudio';
 import PageArrow from '@/components/rpg/PageArrow.vue';
 import PageIndicator from '@/components/rpg/PageIndicator.vue';
 import GameWindow from '@/components/rpg/GameWindow.vue';
-import AudioToggle from '@/components/rpg/AudioToggle.vue';
 
 const route = useRoute();
 const router = useRouter();
-const { audioEnabled, playSound, toggleAudio } = useGameAudio();
 
 const currentIndex = computed(() => {
-    const index = studentPages.findIndex((page) => page.name === route.name);
+    const pageName =
+        typeof route.meta.studentPage === 'string' ? route.meta.studentPage : route.name;
+    const index = studentPages.findIndex((page) => page.name === pageName);
     return index >= 0 ? index : 0;
 });
 
 const currentPage = computed(() => studentPages[currentIndex.value] ?? studentPages[0]);
 const pageTitles = studentPages.map((page) => page.label);
+const layoutSingleColumn = computed((): boolean => {
+    if (typeof route.meta.singleColumn === 'boolean') {
+        return route.meta.singleColumn;
+    }
+
+    return currentPage.value.singleColumn;
+});
 
 const goToAdjacentPage = (direction: -1 | 1): void => {
     const total = studentPages.length;
@@ -59,7 +62,6 @@ const goToAdjacentPage = (direction: -1 | 1): void => {
         return;
     }
 
-    playSound(direction > 0 ? 'click' : 'down');
     void router.push(nextPage.path);
 };
 </script>

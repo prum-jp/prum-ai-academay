@@ -1,20 +1,16 @@
-import { computed, onMounted, ref, watch } from 'vue';
-import type { AdventurerProfile, AdventurerStats } from '@/types/adventurer';
-import { fetchStudentProfile, updateStudentProfile, updateStudentStat } from '@/api/profile';
+import { computed, onMounted, ref } from 'vue';
+import type { AdventurerProfile } from '@/types/adventurer';
+import { fetchStudentProfile, updateStudentProfile } from '@/api/profile';
 import { useAuth } from '@/composables/useAuth';
-import { useGameAudio } from '@/composables/useGameAudio';
-import { formatAdventurerCard } from '@/utils/formatAdventurerCard';
+import { useAdventurerCardPreview } from '@/composables/useAdventurerCardPreview';
 
 const profile = ref<AdventurerProfile | null>(null);
 const isLoading = ref(true);
 const loadError = ref('');
 const saveStatus = ref<'idle' | 'saving' | 'error'>('idle');
-const isUpdatingStat = ref(false);
-const slackPreview = ref('');
-const showToast = ref(false);
 
-const { user, isMentor, isStudent } = useAuth();
-const { playSound } = useGameAudio();
+const { user, isStudent } = useAuth();
+const { slackPreview, showToast, copyAdventurerCard } = useAdventurerCardPreview(profile);
 
 let lastSavedProfile = {
     name: '',
@@ -33,37 +29,6 @@ const saveStatusLabel = computed(() => {
     }
     return '';
 });
-
-const refreshSlackPreview = (): void => {
-    if (!profile.value) {
-        slackPreview.value = '';
-        return;
-    }
-
-    slackPreview.value = formatAdventurerCard(profile.value);
-};
-
-watch(
-    () => {
-        if (!profile.value) {
-            return null;
-        }
-
-        return {
-            name: profile.value.name,
-            background: profile.value.background,
-            hobby: profile.value.hobby,
-            weaponSkill: profile.value.weaponSkill,
-            spellGoal: profile.value.spellGoal,
-            levelTitle: profile.value.levelTitle,
-            stats: { ...profile.value.stats },
-        };
-    },
-    () => {
-        refreshSlackPreview();
-    },
-    { deep: true, immediate: true },
-);
 
 const rememberSavedProfile = (source: AdventurerProfile): void => {
     lastSavedProfile = {
@@ -149,47 +114,6 @@ const persistProfile = async (): Promise<void> => {
     }
 };
 
-const changeStat = async (stat: keyof AdventurerStats, delta: 1 | -1): Promise<void> => {
-    if (!isMentor.value || !profile.value || isUpdatingStat.value) {
-        return;
-    }
-
-    const nextValue = profile.value.stats[stat] + delta;
-    if (nextValue < 0 || nextValue > 10) {
-        playSound('down');
-        return;
-    }
-
-    isUpdatingStat.value = true;
-
-    try {
-        applyProfileUpdate(await updateStudentStat({ stat, delta }));
-        playSound(delta > 0 ? 'click' : 'down');
-    } catch {
-        playSound('down');
-        saveStatus.value = 'error';
-    } finally {
-        isUpdatingStat.value = false;
-    }
-};
-
-const copyAdventurerCard = async (): Promise<void> => {
-    if (!slackPreview.value) {
-        return;
-    }
-
-    try {
-        await navigator.clipboard.writeText(slackPreview.value);
-        playSound('level-up');
-        showToast.value = true;
-        window.setTimeout(() => {
-            showToast.value = false;
-        }, 2500);
-    } catch (error) {
-        console.error('Copy failed:', error);
-    }
-};
-
 export function useStudentProfile() {
     onMounted(() => {
         void loadProfile();
@@ -203,12 +127,10 @@ export function useStudentProfile() {
         saveStatusLabel,
         slackPreview,
         showToast,
-        isMentor,
         isStudent,
         loadProfile,
         persistProfile,
         applyProfileUpdate,
-        changeStat,
         copyAdventurerCard,
     };
 }

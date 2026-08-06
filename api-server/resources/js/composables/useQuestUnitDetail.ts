@@ -1,7 +1,7 @@
 import { computed, type Ref } from 'vue';
 import type { QuestUnitItem } from '@/types/quest';
 import { questUnitConfig } from '@/constants/quests';
-import { formatGrowthStatusText, formatUnitDisplayTitle } from '@/utils/questUnitDisplay';
+import { formatUnitDisplayTitle, formatUnitSkillGrantsText } from '@/utils/questUnitDisplay';
 
 export function useQuestUnitDetail(unit: Ref<QuestUnitItem | null>) {
     const unitTitle = computed((): string => {
@@ -17,7 +17,7 @@ export function useQuestUnitDetail(unit: Ref<QuestUnitItem | null>) {
             return '';
         }
 
-        return formatGrowthStatusText(unit.value.rewards);
+        return formatUnitSkillGrantsText(unit.value.quests);
     });
 
     return {

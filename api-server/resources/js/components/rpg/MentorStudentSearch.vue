@@ -1,14 +1,14 @@
 <template>
     <form class="mentor-student-search input-group" @submit.prevent="emit('search')">
-        <label for="mentor-student-search">{{ mentorStudentSearchConfig.label }}</label>
+        <label for="mentor-student-search">{{ label }}</label>
         <div class="mentor-student-search-row">
             <div class="mentor-student-search-field">
-                <i :class="mentorStudentSearchConfig.buttonIcon" aria-hidden="true"></i>
+                <i :class="buttonIcon" aria-hidden="true"></i>
                 <input
                     id="mentor-student-search"
                     :value="modelValue"
                     type="search"
-                    :placeholder="mentorStudentSearchConfig.placeholder"
+                    :placeholder="placeholder"
                     autocomplete="off"
                     @input="onInput"
                 />
@@ -18,8 +18,8 @@
                 class="mentor-student-search-btn"
                 :disabled="isLoading"
             >
-                <i :class="mentorStudentSearchConfig.buttonIcon" aria-hidden="true"></i>
-                {{ mentorStudentSearchConfig.buttonLabel }}
+                <i :class="buttonIcon" aria-hidden="true"></i>
+                {{ buttonLabel }}
             </button>
         </div>
     </form>
@@ -28,10 +28,22 @@
 <script setup lang="ts">
 import { mentorStudentSearchConfig } from '@/constants/mentor';
 
-defineProps<{
-    modelValue: string;
-    isLoading: boolean;
-}>();
+withDefaults(
+    defineProps<{
+        modelValue: string;
+        isLoading: boolean;
+        label?: string;
+        placeholder?: string;
+        buttonLabel?: string;
+        buttonIcon?: string;
+    }>(),
+    {
+        label: mentorStudentSearchConfig.label,
+        placeholder: mentorStudentSearchConfig.placeholder,
+        buttonLabel: mentorStudentSearchConfig.buttonLabel,
+        buttonIcon: mentorStudentSearchConfig.buttonIcon,
+    },
+);
 
 const emit = defineEmits<{
     'update:modelValue': [value: string];

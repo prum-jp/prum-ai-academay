@@ -3,7 +3,7 @@
 namespace App\Services\QuestImport;
 
 use App\Models\QuestUnit;
-use App\Support\GrowthStatKeys;
+use App\Support\SkillKeys;
 
 class QuestImportItemValidator
 {
@@ -71,13 +71,9 @@ class QuestImportItemValidator
             }
         }
 
-        foreach ($item['rewards'] ?? [] as $reward) {
-            if (! is_array($reward)) {
-                continue;
-            }
-            $stat = (string) ($reward['stat'] ?? '');
-            if (! in_array($stat, GrowthStatKeys::ALL, true)) {
-                $errors[] = "成長ステータス「{$stat}」が不正です。";
+        foreach ($item['skillGrants'] ?? [] as $skill) {
+            if (! in_array((string) $skill, SkillKeys::ALL, true)) {
+                $errors[] = "スキル「{$skill}」が不正です。";
             }
         }
 

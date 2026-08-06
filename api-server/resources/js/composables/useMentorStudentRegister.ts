@@ -3,7 +3,6 @@ import { createMentorStudent, type CreateMentorStudentPayload } from '@/api/ment
 import type { MentorStudent } from '@/types/mentor';
 import { ROLE_STUDENT } from '@/types/auth';
 import { mentorStudentMessages } from '@/constants/mentor';
-import { useGameAudio } from '@/composables/useGameAudio';
 import { extractApiErrorMessage } from '@/utils/extractApiErrorMessage';
 import { extractApiFieldErrors } from '@/utils/extractApiFieldErrors';
 
@@ -28,8 +27,6 @@ export function useMentorStudentRegister() {
     const isSubmitting = ref(false);
     const errorMessage = ref('');
     const fieldErrors = reactive<Record<string, string>>({});
-
-    const { playSound } = useGameAudio();
 
     const clearErrors = (): void => {
         errorMessage.value = '';
@@ -59,11 +56,9 @@ export function useMentorStudentRegister() {
                 password_confirmation: form.password_confirmation,
                 role: Number(form.role),
             });
-            playSound('level-up');
             resetForm();
             return student;
         } catch (error: unknown) {
-            playSound('down');
             Object.assign(fieldErrors, extractApiFieldErrors(error, REGISTER_FIELDS));
             errorMessage.value = extractApiErrorMessage(
                 error,

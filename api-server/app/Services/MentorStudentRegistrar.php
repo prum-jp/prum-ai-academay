@@ -35,18 +35,20 @@ class MentorStudentRegistrar
 
                 StudentStat::query()->create([
                     'user_id' => $user->id,
-                    'stat_presentation' => 0,
-                    'stat_communication' => 0,
-                    'stat_problem_finding' => 0,
-                    'stat_ai_affinity' => 0,
-                    'stat_action' => 0,
-                    'stat_support' => 0,
+                    'stat_business_skill' => 0,
+                    'stat_human_skill' => 0,
+                    'stat_conceptual_skill' => 0,
+                    'total_xp' => 0,
                 ]);
 
-                return $user->load(['studentProfile', 'studentStat'])->loadCount('studentBadges');
+                // TODO: 後に機能追加 — 実績バッジ獲得数
+                // return $user->load(['studentProfile', 'studentStat'])->loadCount('studentBadges');
+                return $user->load(['studentProfile', 'studentStat']);
             }
 
-            return $user->loadCount('studentBadges');
+            // TODO: 後に機能追加 — 実績バッジ獲得数
+            // return $user->loadCount('studentBadges');
+            return $user;
         });
     }
 }

@@ -74,6 +74,19 @@
         />
     </div>
 
+    <div class="input-group">
+        <label :for="`${idPrefix}-difficulty`">{{ questSheetConfig.metaLabels.difficulty }}</label>
+        <input
+            :id="`${idPrefix}-difficulty`"
+            v-model.number="form.difficulty"
+            type="number"
+            min="1"
+            max="5"
+            :placeholder="mentorChildQuestFormLabels.difficultyPlaceholder"
+            :disabled="disabled"
+        />
+    </div>
+
     <label class="mentor-checkbox-row">
         <input
             v-model="form.isRequired"
@@ -85,21 +98,15 @@
 
     <section class="mentor-reward-section">
         <h4>{{ mentorQuestFormLabels.rewardsTitle }}</h4>
-        <MentorQuestRewardFields
-            :rewards="form.rewards"
-            :labels="mentorQuestFormLabels"
-            :field-prefix="`${idPrefix}-reward`"
-            :disabled="disabled"
-            @add="addReward"
-            @remove="removeReward"
-        />
+        <QuestSkillGrantFields v-model="form.skillGrants" :disabled="disabled" />
     </section>
 </template>
 
 <script setup lang="ts">
-import type { MentorQuestRewardInput } from '@/types/questAdmin';
-import { createEmptyReward, mentorQuestFormLabels } from '@/constants/questAdmin';
-import MentorQuestRewardFields from '@/components/rpg/MentorQuestRewardFields.vue';
+import type { SkillKey } from '@/constants/skills';
+import { mentorChildQuestFormLabels, mentorQuestFormLabels } from '@/constants/questAdmin';
+import { questSheetConfig } from '@/constants/questSheet';
+import QuestSkillGrantFields from '@/components/rpg/QuestSkillGrantFields.vue';
 
 interface QuestFormLike {
     title: string;
@@ -108,11 +115,12 @@ interface QuestFormLike {
     rewardText: string;
     badgeLabel: string;
     unlockLevel: number | null;
+    difficulty: number | null;
     isRequired: boolean;
-    rewards: MentorQuestRewardInput[];
+    skillGrants: SkillKey[];
 }
 
-const props = withDefaults(
+withDefaults(
     defineProps<{
         form: QuestFormLike;
         fieldErrors: Record<string, string>;
@@ -132,12 +140,4 @@ const props = withDefaults(
         placeholders: undefined,
     },
 );
-
-const addReward = (): void => {
-    props.form.rewards.push(createEmptyReward());
-};
-
-const removeReward = (index: number): void => {
-    props.form.rewards.splice(index, 1);
-};
 </script>

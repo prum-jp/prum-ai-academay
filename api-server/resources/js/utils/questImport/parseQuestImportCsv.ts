@@ -1,21 +1,21 @@
 import type { QuestImportItem } from '@/types/questImport';
+import { parseQuestDifficulty } from '@/utils/questDifficulty';
+import { DEFAULT_QUEST_TIER, parseQuestTier, type QuestTier } from '@/constants/questTier';
 import {
     buildCsvHeaderIndex,
+    buildSkillColumnIndex,
     getCsvCell,
     QUEST_IMPORT_COLUMN_ALIASES,
 } from '@/utils/questImport/columns';
 import { parseCsvText } from '@/utils/questImport/csvParser';
 import { groupImportItemsByUnit } from '@/utils/questImport/groupItems';
+import { parseMustFlag } from '@/utils/questImport/parseMustFlag';
+import { parseSkillGrantsFromCsvRow } from '@/utils/questImport/parseSkillGrantsFromCsvRow';
+import { normalizeQuestSheetBodyText } from '@/utils/questSheetBody';
 
 /**
- * CSV列 → quests テーブル対応
- * - 内容 / 概要 → description（【提出物】以降は clear_condition に分割可）
- * - 目的 → description 末尾に 【目的】 として追記（DBに独立列なし）
- * - 完了条件 → clear_condition
- * - 所要時間 → estimated_duration
- * - sort_order:
- *   - ユニット = Unit（なければそのユニット内の最小 No）
- *   - クエスト = No（なければ Quest）
+ * CSV列 → QuestImportItem（概要/目的/提出物/完了条件は列ごとに保持）
+ * API 反映時に description / clear_condition へ変換する。
  */
 const REQUIRED_COLUMNS: Array<keyof typeof QUEST_IMPORT_COLUMN_ALIASES> = ['unitTitle', 'title'];
 
@@ -49,36 +49,6 @@ const parseIntegerColumn = (
 
 const pickFirstToolName = (raw: string): string => raw.split(/[,、/／]/)[0]?.trim() ?? '';
 
-const splitContentBody = (
-    content: string,
-): { descriptionBody: string; extractedClearCondition: string } => {
-    const marker = '【提出物】';
-    const index = content.indexOf(marker);
-
-    if (index === -1) {
-        return { descriptionBody: content.trim(), extractedClearCondition: '' };
-    }
-
-    return {
-        descriptionBody: content.slice(0, index).trim(),
-        extractedClearCondition: content.slice(index + marker.length).trim(),
-    };
-};
-
-const buildDescription = (body: string, purpose: string): string => {
-    const parts: string[] = [];
-
-    if (body.trim() !== '') {
-        parts.push(body.trim());
-    }
-
-    if (purpose.trim() !== '') {
-        parts.push(`【目的】\n${purpose.trim()}`);
-    }
-
-    return parts.join('\n\n');
-};
-
 interface ParsedCsvRow {
     lineNumber: number;
     csvNo: string;
@@ -88,40 +58,23 @@ interface ParsedCsvRow {
     todoNote: string;
     unitTitle: string;
     title: string;
-    description: string;
-    descriptionBody: string;
+    overview: string;
     purpose: string;
-    unitDescription: string;
-    clearCondition: string;
+    deliverable: string;
+    completionCondition: string;
+    isRequired: boolean;
     toolName: string;
     difficulty: string;
-    estimatedDuration: string;
+    questTier: string;
+    skillGrants: QuestImportItem['skillGrants'];
 }
 
 interface UnitEntry {
     unitTitle: string;
     unitSortOrder?: number;
     minCsvNo?: number;
-    description?: string;
-    descriptionSourceNo?: number;
     lineNumber: number;
 }
-
-const pickUnitDescription = (row: {
-    unitDescription: string;
-    purpose: string;
-    descriptionBody: string;
-}): string => {
-    if (row.unitDescription.trim() !== '') {
-        return row.unitDescription.trim();
-    }
-
-    if (row.descriptionBody.trim() !== '') {
-        return row.descriptionBody.trim();
-    }
-
-    return row.purpose.trim();
-};
 
 const upsertUnitEntry = (
     unitEntries: Map<string, UnitEntry>,
@@ -130,23 +83,16 @@ const upsertUnitEntry = (
         unitSortOrder?: number;
         csvNoValue?: number;
         lineNumber: number;
-        unitDescription: string;
-        purpose: string;
-        descriptionBody: string;
     },
 ): void => {
     const key = row.unitTitle;
     const existing = unitEntries.get(key);
-    const candidateDescription = pickUnitDescription(row);
-    const candidateNo = row.csvNoValue ?? Number.MAX_SAFE_INTEGER;
 
     if (!existing) {
         unitEntries.set(key, {
             unitTitle: row.unitTitle,
             unitSortOrder: row.unitSortOrder,
             minCsvNo: row.csvNoValue,
-            description: candidateDescription || undefined,
-            descriptionSourceNo: candidateDescription ? candidateNo : undefined,
             lineNumber: row.lineNumber,
         });
         return;
@@ -164,16 +110,6 @@ const upsertUnitEntry = (
         (existing.minCsvNo === undefined || row.csvNoValue < existing.minCsvNo)
     ) {
         existing.minCsvNo = row.csvNoValue;
-    }
-
-    if (
-        candidateDescription !== '' &&
-        (existing.description === undefined ||
-            existing.description === '' ||
-            candidateNo < (existing.descriptionSourceNo ?? Number.MAX_SAFE_INTEGER))
-    ) {
-        existing.description = candidateDescription;
-        existing.descriptionSourceNo = candidateNo;
     }
 };
 
@@ -222,10 +158,15 @@ const sortParsedRows = (left: ParsedCsvRow, right: ParsedCsvRow): number => {
 /**
  * CSV テキストを QuestImportItem[] に変換する。
  * 各行は child_quest。Unit名 の組み合わせから personal_unit を自動生成する。
+ * ユニット行（Quest名が空）は Unit名 と Unit（並び順）のみ登録する。
  */
 export const parseQuestImportCsv = (
     text: string,
+    options?: {
+        defaultQuestTier?: QuestTier;
+    },
 ): { items: QuestImportItem[]; errors: string[] } => {
+    const defaultQuestTier = options?.defaultQuestTier ?? DEFAULT_QUEST_TIER;
     const rows = parseCsvText(text);
     const errors: string[] = [];
 
@@ -235,6 +176,8 @@ export const parseQuestImportCsv = (
 
     const [headerRow, ...dataRows] = rows;
     const headerIndex = buildCsvHeaderIndex(headerRow);
+    const skillColumnIndex = buildSkillColumnIndex(headerRow);
+    const mustColumnPresent = headerIndex.has('mustFlag');
 
     const missingColumns = REQUIRED_COLUMNS.filter((column) => !headerIndex.has(column));
     if (missingColumns.length > 0) {
@@ -262,13 +205,21 @@ export const parseQuestImportCsv = (
             return;
         }
 
-        const contentRaw = getCsvCell(cells, headerIndex, 'description');
-        const purposeRaw = getCsvCell(cells, headerIndex, 'purpose');
-        const unitDescriptionRaw = getCsvCell(cells, headerIndex, 'unitDescription');
-        const clearConditionRaw = getCsvCell(cells, headerIndex, 'clearCondition').trim();
-        const { descriptionBody, extractedClearCondition } = splitContentBody(contentRaw);
-        const description = buildDescription(descriptionBody, purposeRaw);
-        const clearCondition = clearConditionRaw || extractedClearCondition;
+        const overview = normalizeQuestSheetBodyText(
+            getCsvCell(cells, headerIndex, 'overview').trim(),
+        );
+        const purpose = normalizeQuestSheetBodyText(
+            getCsvCell(cells, headerIndex, 'purpose').trim(),
+        );
+        const deliverable = normalizeQuestSheetBodyText(
+            getCsvCell(cells, headerIndex, 'deliverable').trim(),
+        );
+        const completionCondition = normalizeQuestSheetBodyText(
+            getCsvCell(cells, headerIndex, 'completionCondition').trim(),
+        );
+        const isRequired = parseMustFlag(getCsvCell(cells, headerIndex, 'mustFlag'), {
+            columnPresent: mustColumnPresent,
+        });
 
         const csvNoRaw = getCsvCell(cells, headerIndex, 'csvNo').trim();
         const csvNoValue = parseIntegerColumn(csvNoRaw, lineNumber, 'No', errors);
@@ -290,9 +241,6 @@ export const parseQuestImportCsv = (
             unitSortOrder,
             csvNoValue,
             lineNumber,
-            unitDescription: unitDescriptionRaw,
-            purpose: purposeRaw,
-            descriptionBody,
         };
 
         if (title === '') {
@@ -309,20 +257,21 @@ export const parseQuestImportCsv = (
             todoNote: getCsvCell(cells, headerIndex, 'todoNote').trim(),
             unitTitle,
             title,
-            description,
-            descriptionBody,
-            purpose: purposeRaw.trim(),
-            unitDescription: unitDescriptionRaw.trim(),
-            clearCondition,
+            overview,
+            purpose,
+            deliverable,
+            completionCondition,
+            isRequired,
             toolName: pickFirstToolName(getCsvCell(cells, headerIndex, 'toolName')),
             difficulty: getCsvCell(cells, headerIndex, 'difficulty').trim(),
-            estimatedDuration: getCsvCell(cells, headerIndex, 'estimatedDuration').trim(),
+            questTier: getCsvCell(cells, headerIndex, 'questTier').trim(),
+            skillGrants: parseSkillGrantsFromCsvRow(cells, skillColumnIndex),
         });
 
         upsertUnitEntry(unitEntries, unitMeta);
     });
 
-    if (parsedRows.length === 0 && errors.length === 0) {
+    if (parsedRows.length === 0 && unitEntries.size === 0 && errors.length === 0) {
         return { items: [], errors: ['取り込めるデータ行がありません。'] };
     }
 
@@ -332,10 +281,8 @@ export const parseQuestImportCsv = (
             clientId: createClientId(unit.lineNumber, '-unit'),
             kind: 'personal_unit' as const,
             title: unit.unitTitle,
-            description: unit.description || undefined,
             sortOrder: unit.unitSortOrder ?? unit.minCsvNo,
-            rewards: [],
-            isPublished: false,
+            skillGrants: [],
         }));
 
     const childQuests: QuestImportItem[] = parsedRows.sort(sortParsedRows).map((row) => ({
@@ -345,15 +292,17 @@ export const parseQuestImportCsv = (
         unitSortOrder: row.unitSortOrder,
         unitTitle: row.unitTitle,
         title: row.title,
-        description: row.description || undefined,
-        clearCondition: row.clearCondition || undefined,
+        overview: row.overview || undefined,
+        purpose: row.purpose || undefined,
+        deliverable: row.deliverable || undefined,
+        completionCondition: row.completionCondition || undefined,
+        isRequired: row.isRequired,
         toolCode: row.toolName || undefined,
-        estimatedDuration: row.estimatedDuration || undefined,
         todoNote: row.todoNote || undefined,
-        difficulty: row.difficulty || undefined,
+        difficulty: parseQuestDifficulty(row.difficulty),
+        questTier: parseQuestTier(row.questTier) ?? defaultQuestTier,
         sortOrder: row.csvNoValue ?? row.questNo,
-        rewards: [],
-        isPublished: false,
+        skillGrants: row.skillGrants,
     }));
 
     return { items: groupImportItemsByUnit([...personalUnits, ...childQuests]), errors };

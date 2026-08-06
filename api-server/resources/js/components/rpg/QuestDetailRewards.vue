@@ -4,10 +4,10 @@
             <i class="fa-solid fa-gift"></i>
             {{ rewardText }}
         </p>
-        <ul v-if="rewards.length > 0" class="quest-detail-rewards">
-            <li v-for="(reward, index) in rewards" :key="index">
+        <ul v-if="skillGrants.length > 0" class="quest-detail-rewards">
+            <li v-for="(skill, index) in skillGrants" :key="index">
                 <i class="fa-solid fa-bolt"></i>
-                {{ formatQuestReward(reward) }}
+                {{ formatSkillGrantReward(skill) }}
             </li>
         </ul>
         <p v-else-if="!rewardText" class="quest-detail-empty">
@@ -17,8 +17,8 @@
 </template>
 
 <script setup lang="ts">
-import type { QuestReward } from '@/types/quest';
-import { formatQuestReward } from '@/utils/questDisplay';
+import type { SkillKey } from '@/constants/skills';
+import { formatSkillGrantReward } from '@/utils/skillGrants';
 import QuestDetailSection from '@/components/rpg/QuestDetailSection.vue';
 
 defineProps<{
@@ -27,7 +27,7 @@ defineProps<{
         icon: string;
     };
     rewardText: string;
-    rewards: QuestReward[];
+    skillGrants: SkillKey[];
     emptyMessage: string;
 }>();
 </script>

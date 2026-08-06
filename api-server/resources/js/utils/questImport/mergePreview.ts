@@ -1,32 +1,43 @@
 import type { QuestImportItem, QuestImportPreviewResponse } from '@/types/questImport';
+import { parseQuestDescriptionSections } from '@/utils/questDescriptionSections';
 import { groupImportItemsByUnit } from '@/utils/questImport/groupItems';
 
 const mergePreviewItem = (
     previewItem: QuestImportItem,
     sourceItem: QuestImportItem | undefined,
     index: number,
-    preferServerPublish: boolean,
-): QuestImportItem => ({
-    ...previewItem,
-    clientId: sourceItem?.clientId ?? `preview-${index}`,
-    csvNo: sourceItem?.csvNo,
-    unitSortOrder: sourceItem?.unitSortOrder,
-    todoNote: sourceItem?.todoNote,
-    difficulty: sourceItem?.difficulty,
-    estimatedDuration: sourceItem?.estimatedDuration,
-    isPublished: preferServerPublish
-        ? previewItem.isPublished
-        : (sourceItem?.isPublished ?? previewItem.isPublished),
-});
+): QuestImportItem => {
+    const parsedSections =
+        previewItem.kind === 'child_quest'
+            ? parseQuestDescriptionSections(
+                  previewItem.description ?? '',
+                  previewItem.clearCondition ?? '',
+              )
+            : null;
+
+    return {
+        ...previewItem,
+        clientId: sourceItem?.clientId ?? `preview-${index}`,
+        csvNo: sourceItem?.csvNo,
+        unitSortOrder: sourceItem?.unitSortOrder,
+        todoNote: sourceItem?.todoNote,
+        difficulty: sourceItem?.difficulty ?? previewItem.difficulty,
+        questTier: sourceItem?.questTier ?? previewItem.questTier,
+        isRequired: sourceItem?.isRequired ?? previewItem.isRequired,
+        skillGrants: sourceItem?.skillGrants ?? previewItem.skillGrants ?? [],
+        overview: sourceItem?.overview ?? parsedSections?.overview ?? undefined,
+        purpose: sourceItem?.purpose ?? parsedSections?.purpose ?? undefined,
+        deliverable: sourceItem?.deliverable ?? parsedSections?.deliverable ?? undefined,
+        completionCondition:
+            sourceItem?.completionCondition ?? parsedSections?.completionCondition ?? undefined,
+    };
+};
 
 /** サーバープレビュー結果をクライアント状態とマージしてグループ化 */
 export const applyPreviewResponse = (
     preview: QuestImportPreviewResponse,
     sourceItems: QuestImportItem[],
-    preferServerPublish = false,
 ): QuestImportItem[] =>
     groupImportItemsByUnit(
-        preview.data.map((item, index) =>
-            mergePreviewItem(item, sourceItems[index], index, preferServerPublish),
-        ),
+        preview.data.map((item, index) => mergePreviewItem(item, sourceItems[index], index)),
     );

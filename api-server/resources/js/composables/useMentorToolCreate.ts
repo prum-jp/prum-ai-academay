@@ -2,7 +2,6 @@ import { reactive, ref } from 'vue';
 import { createMentorTool } from '@/api/toolAdmin';
 import type { MentorTool } from '@/types/questAdmin';
 import { mentorToolMessages } from '@/constants/toolAdmin';
-import { useGameAudio } from '@/composables/useGameAudio';
 import { extractApiErrorMessage } from '@/utils/extractApiErrorMessage';
 import { extractApiFieldErrors } from '@/utils/extractApiFieldErrors';
 
@@ -23,8 +22,6 @@ export function useMentorToolCreate() {
     const isSubmitting = ref(false);
     const errorMessage = ref('');
     const fieldErrors = reactive<Record<string, string>>({});
-
-    const { playSound } = useGameAudio();
 
     const clearErrors = (): void => {
         errorMessage.value = '';
@@ -51,11 +48,9 @@ export function useMentorToolCreate() {
                 code: form.code.trim(),
                 name: form.name.trim(),
             });
-            playSound('level-up');
             resetForm();
             return tool;
         } catch (error: unknown) {
-            playSound('down');
             Object.assign(fieldErrors, extractApiFieldErrors(error, CREATE_FIELDS));
             errorMessage.value = extractApiErrorMessage(
                 error,

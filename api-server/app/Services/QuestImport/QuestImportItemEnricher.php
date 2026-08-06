@@ -4,6 +4,9 @@ namespace App\Services\QuestImport;
 
 use App\Models\Quest;
 use App\Models\QuestUnit;
+use App\Support\QuestDifficulty;
+use App\Support\QuestTier;
+use App\Support\SkillKeys;
 use Illuminate\Support\Collection;
 
 class QuestImportItemEnricher
@@ -126,20 +129,12 @@ class QuestImportItemEnricher
      */
     private function isPersonalUnitUnchanged(array $item, int $existingId): bool
     {
-        $unit = QuestUnit::query()->with('rewards')->whereKey($existingId)->first();
+        $unit = QuestUnit::query()->whereKey($existingId)->first();
         if ($unit === null) {
             return false;
         }
 
         $sortOrder = $this->resolveComparableSortOrder((int) ($item['sortOrder'] ?? 0), (int) $unit->sort_order);
-
-        if (! $this->sameText((string) ($item['description'] ?? ''), (string) ($unit->description ?? ''))) {
-            return false;
-        }
-
-        if (! $this->sameText((string) ($item['rewardText'] ?? ''), (string) ($unit->reward_text ?? ''))) {
-            return false;
-        }
 
         if ($sortOrder !== (int) $unit->sort_order) {
             return false;
@@ -149,7 +144,7 @@ class QuestImportItemEnricher
             return false;
         }
 
-        return $this->sameRewards($item['rewards'] ?? [], $unit->rewards);
+        return true;
     }
 
     /**
@@ -157,7 +152,7 @@ class QuestImportItemEnricher
      */
     private function isChildQuestUnchanged(array $item, int $existingId, ?Collection $toolCodes): bool
     {
-        $quest = Quest::query()->whereKey($existingId)->first();
+        $quest = Quest::query()->with('rewards')->whereKey($existingId)->first();
         if ($quest === null) {
             return false;
         }
@@ -172,15 +167,24 @@ class QuestImportItemEnricher
         $toolCodes ??= $this->toolResolver->loadToolCodeMap();
         $toolRef = trim((string) ($item['toolCode'] ?? ''));
         $toolId = $toolRef !== '' ? $this->toolResolver->resolveToolId($toolRef, $toolCodes) : null;
-        $estimatedDuration = $this->normalizeEstimatedDuration($item['estimatedDuration'] ?? null);
+        $difficulty = QuestDifficulty::normalize($item['difficulty'] ?? null);
+        $questTier = QuestTier::normalize($item['questTier'] ?? QuestTier::LOW);
+        $existingTier = QuestTier::resolve(
+            $quest->quest_tier,
+            $quest->unlock_level !== null ? (int) $quest->unlock_level : null,
+        );
 
         return $this->sameText((string) ($item['title'] ?? ''), (string) $quest->title)
             && $this->sameText((string) ($item['description'] ?? ''), (string) ($quest->description ?? ''))
             && $this->sameText((string) ($item['clearCondition'] ?? ''), (string) ($quest->clear_condition ?? ''))
-            && $this->sameText((string) ($estimatedDuration ?? ''), (string) ($quest->estimated_duration ?? ''))
+            && $difficulty === ($quest->difficulty !== null ? (int) $quest->difficulty : null)
+            && QuestDifficulty::experiencePoints($difficulty) === (int) ($quest->experience_points ?? 0)
             && $toolId === ($quest->tool_id !== null ? (int) $quest->tool_id : null)
             && $sortOrder === (int) $quest->sort_order
-            && (bool) ($item['isPublished'] ?? false) === (bool) $quest->is_published;
+            && (bool) ($item['isRequired'] ?? true) === (bool) $quest->is_required
+            && (bool) ($item['isPublished'] ?? false) === (bool) $quest->is_published
+            && $questTier === $existingTier
+            && $this->sameSkillGrants($item['skillGrants'] ?? [], $quest->rewards);
     }
 
     /**
@@ -200,6 +204,7 @@ class QuestImportItemEnricher
         $badgeLabel = ($item['badgeLabel'] ?? null) !== null && $item['badgeLabel'] !== ''
             ? (string) $item['badgeLabel']
             : null;
+        $difficulty = QuestDifficulty::normalize($item['difficulty'] ?? null);
 
         return $this->sameText((string) ($item['title'] ?? ''), (string) $quest->title)
             && $this->sameText((string) ($item['description'] ?? ''), (string) ($quest->description ?? ''))
@@ -208,23 +213,16 @@ class QuestImportItemEnricher
             && $this->sameText((string) ($badgeLabel ?? ''), (string) ($quest->badge_label ?? ''))
             && (bool) ($item['isRequired'] ?? true) === (bool) $quest->is_required
             && $unlockLevel === ($quest->unlock_level !== null ? (int) $quest->unlock_level : null)
+            && $difficulty === ($quest->difficulty !== null ? (int) $quest->difficulty : null)
+            && QuestDifficulty::experiencePoints($difficulty) === (int) ($quest->experience_points ?? 0)
             && $sortOrder === (int) $quest->sort_order
             && (bool) ($item['isPublished'] ?? false) === (bool) $quest->is_published
-            && $this->sameRewards($item['rewards'] ?? [], $quest->rewards);
+            && $this->sameSkillGrants($item['skillGrants'] ?? [], $quest->rewards);
     }
 
     private function resolveComparableSortOrder(int $incoming, int $existing): int
     {
         return $incoming <= 0 ? $existing : $incoming;
-    }
-
-    private function normalizeEstimatedDuration(mixed $value): ?string
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        return (string) $value;
     }
 
     private function sameText(string $left, string $right): bool
@@ -234,37 +232,38 @@ class QuestImportItemEnricher
 
     /**
      * @param  mixed  $incoming
-     * @param  \Illuminate\Support\Collection<int, \App\Models\QuestReward|\App\Models\QuestUnitReward>|iterable<mixed>  $existing
+     * @param  \Illuminate\Support\Collection<int, \App\Models\QuestReward>|iterable<mixed>  $existing
      */
-    private function sameRewards(mixed $incoming, mixed $existing): bool
+    private function sameSkillGrants(mixed $incoming, mixed $existing): bool
     {
-        $normalize = function (mixed $rewards): array {
-            $rows = [];
+        $normalizeIncoming = function (mixed $skills): array {
+            if (! is_array($skills)) {
+                return [];
+            }
+
+            return SkillKeys::normalizeList($skills);
+        };
+
+        $normalizeExisting = function (mixed $rewards): array {
+            $skills = [];
 
             foreach ($rewards ?? [] as $reward) {
                 if (! is_array($reward) && ! is_object($reward)) {
                     continue;
                 }
 
-                $stat = is_array($reward)
-                    ? (string) ($reward['stat'] ?? '')
+                $skill = is_array($reward)
+                    ? (string) ($reward['skill'] ?? $reward['stat'] ?? '')
                     : (string) ($reward->stat ?? '');
-                $points = is_array($reward)
-                    ? (int) ($reward['points'] ?? 0)
-                    : (int) ($reward->points ?? 0);
 
-                if ($stat === '') {
-                    continue;
+                if ($skill !== '') {
+                    $skills[] = $skill;
                 }
-
-                $rows[] = $stat.':'.$points;
             }
 
-            sort($rows);
-
-            return $rows;
+            return SkillKeys::normalizeList($skills);
         };
 
-        return $normalize($incoming) === $normalize($existing);
+        return $normalizeIncoming($incoming) === $normalizeExisting($existing);
     }
 }
