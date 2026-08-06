@@ -104,6 +104,7 @@ const loadUnit = async (): Promise<void> => {
             title: '',
             description: '',
             sortOrder: 0,
+            rewardText: '',
             questCount: 0,
             isPublished: false,
         });

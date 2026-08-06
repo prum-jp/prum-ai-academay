@@ -31,14 +31,14 @@
     </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import type { PaginationMeta } from '@/types/pagination';
 import AsyncState from '@/components/rpg/AsyncState.vue';
 import MentorStudentSearch from '@/components/rpg/MentorStudentSearch.vue';
 import QuestPagination from '@/components/rpg/QuestPagination.vue';
 
 const props = defineProps<{
-    items: unknown[];
+    items: T[];
     meta: PaginationMeta | null;
     searchQuery: string;
     isLoading: boolean;
@@ -48,7 +48,12 @@ const props = defineProps<{
     searchLabel: string;
     searchPlaceholder: string;
     paginationDisabled?: boolean;
-    itemKey?: (item: unknown) => string | number;
+    itemKey?: (item: T) => string | number;
+}>();
+
+defineSlots<{
+    item(props: { item: T }): unknown;
+    footer(): unknown;
 }>();
 
 defineEmits<{
@@ -57,7 +62,7 @@ defineEmits<{
     'page-change': [page: number];
 }>();
 
-const resolveKey = (item: unknown): string | number => {
+const resolveKey = (item: T): string | number => {
     if (props.itemKey) {
         return props.itemKey(item);
     }

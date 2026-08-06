@@ -1,6 +1,5 @@
 import type { QuestItem, QuestUnitItem } from '@/types/quest';
 import type { QuestProgressStatus } from '@/constants/questProgress';
-import type { UnitProgressStatus } from '@/constants/unitProgress';
 import { resolveUnitProgressStatus } from '@/constants/unitProgress';
 
 export const recalculateUnitProgress = (unit: QuestUnitItem): QuestUnitItem => {

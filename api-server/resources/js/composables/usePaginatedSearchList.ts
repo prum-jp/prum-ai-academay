@@ -11,8 +11,8 @@ export function usePaginatedSearchList<T, M extends PaginationMeta = PaginationM
     fallbackErrorMessage: string,
     options: UsePaginatedSearchListOptions = {},
 ) {
-    const items = ref<T[]>([]) as { value: T[] };
-    const meta = ref<M | null>(null) as { value: M | null };
+    const items = ref<T[]>([]);
+    const meta = ref<M | null>(null);
     const searchQuery = ref('');
     const appliedQuery = ref('');
     const isLoading = ref(true);

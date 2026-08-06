@@ -160,7 +160,7 @@ export interface UpdateMentorPersonalQuestPayload {
     description: string;
     clearCondition: string;
     toolId: number | null;
-    estimatedDuration: string;
+    estimatedDuration?: string;
     difficulty: number | null;
     skillGrants: SkillKey[];
     questTier?: QuestTier;
