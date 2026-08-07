@@ -44,6 +44,7 @@ export const mentorQuestBoardCardConfig = {
     description:
         '個人ユニットは受講生ごとに割り当て、チーム・特別クエストは公開・削除を管理できます。内容の確認・更新はクエストマスタから行えます。',
     masterLinkLabel: 'クエストマスタ',
+    userRegisterLinkLabel: 'ユーザー追加',
     createButtonLabel: '新規追加',
 } as const;
 

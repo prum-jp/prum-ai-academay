@@ -9,10 +9,10 @@ fi
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
-php artisan migrate --force
-
 if [ "${RUN_SEEDER:-false}" = "true" ]; then
-    php artisan db:seed --force
+    php artisan migrate:fresh --seed --force
+else
+    php artisan migrate --force
 fi
 
 php artisan storage:link 2>/dev/null || true

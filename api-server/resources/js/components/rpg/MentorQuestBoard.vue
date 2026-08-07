@@ -9,6 +9,10 @@
                     <i class="fa-solid fa-book" aria-hidden="true"></i>
                     {{ mentorQuestBoardCardConfig.masterLinkLabel }}
                 </RouterLink>
+                <RouterLink class="mentor-register-link" :to="{ name: 'mentor-register' }">
+                    <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+                    {{ mentorQuestBoardCardConfig.userRegisterLinkLabel }}
+                </RouterLink>
                 <RouterLink
                     class="mentor-register-link"
                     :to="{ name: 'mentor-quest-create' }"
