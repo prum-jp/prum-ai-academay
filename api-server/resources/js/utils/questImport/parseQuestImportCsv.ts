@@ -11,6 +11,7 @@ import { parseCsvText } from '@/utils/questImport/csvParser';
 import { groupImportItemsByUnit } from '@/utils/questImport/groupItems';
 import { parseMustFlag } from '@/utils/questImport/parseMustFlag';
 import { parseSkillGrantsFromCsvRow } from '@/utils/questImport/parseSkillGrantsFromCsvRow';
+import { pickFirstToolName } from '@/utils/questImport/splitToolNames';
 import { normalizeQuestSheetBodyText } from '@/utils/questSheetBody';
 
 /**
@@ -46,8 +47,6 @@ const parseIntegerColumn = (
 
     return value;
 };
-
-const pickFirstToolName = (raw: string): string => raw.split(/[,、/／]/)[0]?.trim() ?? '';
 
 interface ParsedCsvRow {
     lineNumber: number;

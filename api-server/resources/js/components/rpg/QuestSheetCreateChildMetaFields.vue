@@ -26,21 +26,11 @@
                 <tr>
                     <th>{{ questSheetConfig.metaLabels.recommendedTool }}</th>
                     <td>
-                        <select
-                            id="child-quest-create-tool"
-                            v-model="toolId"
-                            class="quest-sheet-create-meta-input"
+                        <MentorToolSelectField
+                            v-model="toolIds"
+                            :tools="tools"
                             :disabled="disabled"
-                        >
-                            <option :value="null">{{ mentorChildQuestFormLabels.toolNone }}</option>
-                            <option
-                                v-for="tool in tools"
-                                :key="tool.id"
-                                :value="tool.id"
-                            >
-                                {{ tool.name }}
-                            </option>
-                        </select>
+                        />
                     </td>
                 </tr>
                 <tr>
@@ -87,9 +77,10 @@ import type { MentorTool } from '@/types/questAdmin';
 import type { SkillKey } from '@/constants/skills';
 import type { QuestTier } from '@/constants/questTier';
 import { formatExperiencePointsFromDifficulty } from '@/utils/questDifficulty';
+import MentorToolSelectField from '@/components/rpg/MentorToolSelectField.vue';
 import QuestSkillGrantFields from '@/components/rpg/QuestSkillGrantFields.vue';
 
-const toolId = defineModel<number | null>('toolId', { required: true });
+const toolIds = defineModel<number[]>('toolIds', { required: true });
 const difficulty = defineModel<number | null>('difficulty', { default: null });
 const questTier = defineModel<QuestTier>('questTier', { default: 'low' });
 const skillGrants = defineModel<SkillKey[]>('skillGrants', { default: () => [] });

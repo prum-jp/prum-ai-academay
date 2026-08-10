@@ -39,11 +39,17 @@ class QuestResource extends JsonResource
             'type' => $this->type,
             'questUnitId' => $this->quest_unit_id,
             'tool' => $this->when(
-                $this->relationLoaded('tool'),
-                fn () => $this->tool !== null
-                    ? (new ToolResource($this->tool))->resolve()
-                    : null,
+                $this->relationLoaded('tool') || $this->relationLoaded('tools'),
+                fn () => $this->resolvePrimaryTool(),
                 null,
+            ),
+            'tools' => $this->when(
+                $this->relationLoaded('tools'),
+                fn () => $this->tools
+                    ->map(fn ($tool) => (new ToolResource($tool))->resolve())
+                    ->values()
+                    ->all(),
+                [],
             ),
             'isRequired' => (bool) $this->is_required,
             'unlockLevel' => $unlockLevel,
@@ -82,5 +88,21 @@ class QuestResource extends JsonResource
             'submissionUrl' => $progress?->submission_url,
             'participantCount' => (int) ($this->applications_count ?? 0),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function resolvePrimaryTool(): ?array
+    {
+        if ($this->relationLoaded('tools') && $this->tools->isNotEmpty()) {
+            return (new ToolResource($this->tools->first()))->resolve();
+        }
+
+        if ($this->relationLoaded('tool') && $this->tool !== null) {
+            return (new ToolResource($this->tool))->resolve();
+        }
+
+        return null;
     }
 }

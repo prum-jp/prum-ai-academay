@@ -23,6 +23,8 @@ services:
       - key: CACHE_STORE
         value: file
       - key: QUEUE_CONNECTION
-        value: sync
+        value: database
       - key: RUN_SEEDER
-        value: "true"
+        value: "false"
+      - key: DB_FRESH
+        value: "false"

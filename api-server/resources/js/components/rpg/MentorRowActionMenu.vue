@@ -1,6 +1,7 @@
 <template>
-    <div ref="menuRef" class="mentor-quest-unit-menu-wrap">
+    <div ref="wrapRef" class="mentor-quest-unit-menu-wrap">
         <button
+            ref="triggerRef"
             type="button"
             class="mentor-quest-unit-menu-btn"
             :class="{ 'is-open': isMenuOpen }"
@@ -12,31 +13,39 @@
             <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
         </button>
 
-        <ul v-if="isMenuOpen" class="mentor-quest-unit-menu">
-            <li>
-                <RouterLink
-                    :to="detailTo"
-                    class="mentor-quest-unit-menu-item"
-                    @click="closeMenu"
-                >
-                    {{ mentorQuestMasterMenuConfig.detailLabel }}
-                </RouterLink>
-            </li>
-            <li>
-                <RouterLink
-                    :to="editTo"
-                    class="mentor-quest-unit-menu-item"
-                    @click="closeMenu"
-                >
-                    {{ mentorQuestMasterMenuConfig.editLabel }}
-                </RouterLink>
-            </li>
-        </ul>
+        <Teleport to="body">
+            <ul
+                v-if="isMenuOpen"
+                ref="menuRef"
+                class="mentor-quest-unit-menu"
+                :style="menuStyle"
+            >
+                <li>
+                    <RouterLink
+                        :to="detailTo"
+                        class="mentor-quest-unit-menu-item"
+                        @click="closeMenu"
+                    >
+                        {{ mentorQuestMasterMenuConfig.detailLabel }}
+                    </RouterLink>
+                </li>
+                <li>
+                    <RouterLink
+                        :to="editTo"
+                        class="mentor-quest-unit-menu-item"
+                        @click="closeMenu"
+                    >
+                        {{ mentorQuestMasterMenuConfig.editLabel }}
+                    </RouterLink>
+                </li>
+            </ul>
+        </Teleport>
     </div>
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import type { CSSProperties } from 'vue';
 import { RouterLink, type RouteLocationRaw } from 'vue-router';
 import { mentorQuestMasterMenuConfig } from '@/constants/questMaster';
 
@@ -46,33 +55,95 @@ defineProps<{
     disabled?: boolean;
 }>();
 
+const wrapRef = ref<HTMLElement | null>(null);
+const triggerRef = ref<HTMLButtonElement | null>(null);
 const menuRef = ref<HTMLElement | null>(null);
 const isMenuOpen = ref(false);
+const menuStyle = ref<CSSProperties>({});
 
 const closeMenu = (): void => {
     isMenuOpen.value = false;
 };
 
+const updateMenuPosition = (): void => {
+    const trigger = triggerRef.value;
+    if (!trigger) {
+        return;
+    }
+
+    const rect = trigger.getBoundingClientRect();
+    const menuHeight = menuRef.value?.offsetHeight ?? 88;
+    const gap = 6;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < menuHeight + gap && rect.top > menuHeight + gap;
+
+    menuStyle.value = {
+        position: 'fixed',
+        top: openUpward ? `${rect.top - menuHeight - gap}px` : `${rect.bottom + gap}px`,
+        left: `${rect.right}px`,
+        transform: 'translateX(-100%)',
+        minWidth: '168px',
+        zIndex: 1200,
+    };
+};
+
+const openMenu = async (): Promise<void> => {
+    isMenuOpen.value = true;
+    await nextTick();
+    updateMenuPosition();
+    await nextTick();
+    updateMenuPosition();
+};
+
 const toggleMenu = (): void => {
-    isMenuOpen.value = !isMenuOpen.value;
+    if (isMenuOpen.value) {
+        closeMenu();
+        return;
+    }
+
+    void openMenu();
 };
 
 const onDocumentClick = (event: MouseEvent): void => {
-    if (!menuRef.value?.contains(event.target as Node)) {
+    const target = event.target as Node;
+
+    if (wrapRef.value?.contains(target) || menuRef.value?.contains(target)) {
+        return;
+    }
+
+    closeMenu();
+};
+
+const onDocumentKeydown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
         closeMenu();
     }
 };
 
+const onViewportChange = (): void => {
+    if (isMenuOpen.value) {
+        updateMenuPosition();
+    }
+};
+
 watch(isMenuOpen, (open) => {
-    if (open) {
-        document.addEventListener('click', onDocumentClick);
-    } else {
-        document.removeEventListener('click', onDocumentClick);
+    if (!open) {
+        menuStyle.value = {};
     }
 });
 
-onUnmounted(() => {
+onMounted(() => {
+    document.addEventListener('click', onDocumentClick);
+    document.addEventListener('keydown', onDocumentKeydown);
+    window.addEventListener('resize', onViewportChange);
+    window.addEventListener('scroll', onViewportChange, true);
+});
+
+onBeforeUnmount(() => {
     document.removeEventListener('click', onDocumentClick);
+    document.removeEventListener('keydown', onDocumentKeydown);
+    window.removeEventListener('resize', onViewportChange);
+    window.removeEventListener('scroll', onViewportChange, true);
 });
 </script>
 

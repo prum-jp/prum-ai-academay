@@ -53,6 +53,16 @@
                     </td>
                 </tr>
                 <tr>
+                    <th>{{ questSheetConfig.metaLabels.recommendedTool }}</th>
+                    <td>
+                        <MentorToolSelectField
+                            v-model="toolIds"
+                            :tools="tools"
+                            :disabled="disabled"
+                        />
+                    </td>
+                </tr>
+                <tr>
                     <th>{{ mentorQuestFormLabels.rewardText }}</th>
                     <td>
                         <input
@@ -97,7 +107,9 @@ import { mentorChildQuestFormLabels, mentorQuestFormLabels, mentorQuestFormPlace
 import { questSheetConfig } from '@/constants/questSheet';
 import type { SkillKey } from '@/constants/skills';
 import { formatExperiencePointsFromDifficulty } from '@/utils/questDifficulty';
+import MentorToolSelectField from '@/components/rpg/MentorToolSelectField.vue';
 import QuestSkillGrantFields from '@/components/rpg/QuestSkillGrantFields.vue';
+import type { MentorTool } from '@/types/questAdmin';
 
 interface QuestMetaFormLike {
     unlockLevel: number | null;
@@ -108,14 +120,17 @@ interface QuestMetaFormLike {
 }
 
 const skillGrants = defineModel<SkillKey[]>('skillGrants', { default: () => [] });
+const toolIds = defineModel<number[]>('toolIds', { default: () => [] });
 
 const props = withDefaults(
     defineProps<{
         form: QuestMetaFormLike;
+        tools?: MentorTool[];
         disabled?: boolean;
         showSkillGrants?: boolean;
     }>(),
     {
+        tools: () => [],
         disabled: false,
         showSkillGrants: false,
     },

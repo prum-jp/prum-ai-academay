@@ -34,6 +34,7 @@ class StudentQuestAccessService
                         ->with([
                             'rewards',
                             'tool',
+                            'tools',
                             'progressRecords' => function ($progressQuery) use ($student): void {
                                 $progressQuery->where('user_id', $student->id);
                             },
@@ -76,6 +77,7 @@ class StudentQuestAccessService
         return $quest->load([
             'rewards',
             'tool',
+            'tools',
             'questUnit:id,title,sort_order',
             'progressRecords' => function ($query) use ($student): void {
                 $query->where('user_id', $student->id);

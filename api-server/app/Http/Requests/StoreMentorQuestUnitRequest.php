@@ -26,6 +26,8 @@ class StoreMentorQuestUnitRequest extends FormRequest
             'quests.*.description' => ['nullable', 'string', 'max:2000'],
             'quests.*.clearCondition' => ['nullable', 'string', 'max:2000'],
             'quests.*.toolId' => ['nullable', 'integer', 'exists:tools,id'],
+            'quests.*.toolIds' => ['nullable', 'array'],
+            'quests.*.toolIds.*' => ['integer', 'exists:tools,id'],
             'quests.*.sortOrder' => ['nullable', 'integer', 'min:1'],
             'quests.*.difficulty' => ['nullable', 'integer', 'min:1', 'max:5'],
             'quests.*.skillGrants' => ['nullable', 'array'],

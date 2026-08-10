@@ -11,10 +11,12 @@ COPY public ./public
 
 RUN npm run build
 
-FROM php:8.4-cli-bookworm AS app
+FROM php:8.4-fpm-bookworm AS app
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        nginx \
+        gettext-base \
         git \
         unzip \
         libzip-dev \
@@ -30,7 +32,8 @@ RUN apt-get update \
         zip \
         bcmath \
         gd \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /etc/nginx/sites-enabled/default
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -46,6 +49,8 @@ RUN composer install \
 COPY . .
 
 COPY --from=frontend /app/public/build ./public/build
+
+COPY docker/render/nginx.conf /etc/nginx/conf.d/default.conf.template
 
 RUN composer dump-autoload --optimize \
     && chmod +x docker/render/start.sh

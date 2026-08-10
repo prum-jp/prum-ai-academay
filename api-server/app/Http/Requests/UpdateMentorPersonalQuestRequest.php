@@ -40,6 +40,8 @@ class UpdateMentorPersonalQuestRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:10000'],
             'clearCondition' => ['nullable', 'string', 'max:10000'],
             'toolId' => ['nullable', 'integer', 'exists:tools,id'],
+            'toolIds' => ['nullable', 'array'],
+            'toolIds.*' => ['integer', 'exists:tools,id'],
             'estimatedDuration' => ['nullable', 'string', 'max:255'],
             'difficulty' => ['nullable', 'integer', 'min:1', 'max:5'],
             'skillGrants' => ['nullable', 'array'],

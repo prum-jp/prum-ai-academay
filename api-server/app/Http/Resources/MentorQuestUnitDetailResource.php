@@ -39,6 +39,9 @@ class MentorQuestUnitDetailResource extends JsonResource
                     'description' => $quest->description ?? '',
                     'clearCondition' => $quest->clear_condition ?? '',
                     'toolId' => $quest->tool_id,
+                    'toolIds' => $quest->relationLoaded('tools')
+                        ? $quest->tools->pluck('id')->values()->all()
+                        : [],
                     'sortOrder' => (int) $quest->sort_order,
                     'isPublished' => (bool) $quest->is_published,
                     'difficulty' => $quest->difficulty,

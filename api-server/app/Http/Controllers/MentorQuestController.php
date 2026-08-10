@@ -48,7 +48,7 @@ class MentorQuestController extends Controller
 
     public function show(Quest $quest): JsonResponse
     {
-        $quest->load(['rewards', 'tool', 'questUnit']);
+        $quest->load(['rewards', 'tool', 'tools', 'questUnit']);
 
         return response()->json([
             'data' => (new MentorQuestDetailResource($quest))->resolve(),

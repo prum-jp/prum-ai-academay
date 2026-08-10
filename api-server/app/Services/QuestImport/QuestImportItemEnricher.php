@@ -166,7 +166,7 @@ class QuestImportItemEnricher
         $sortOrder = $this->resolveComparableSortOrder((int) ($item['sortOrder'] ?? 0), (int) $quest->sort_order);
         $toolCodes ??= $this->toolResolver->loadToolCodeMap();
         $toolRef = trim((string) ($item['toolCode'] ?? ''));
-        $toolId = $toolRef !== '' ? $this->toolResolver->resolveToolId($toolRef, $toolCodes) : null;
+        $toolId = $toolRef !== '' ? $this->toolResolver->resolveFirstToolId($toolRef, $toolCodes) : null;
         $difficulty = QuestDifficulty::normalize($item['difficulty'] ?? null);
         $questTier = QuestTier::normalize($item['questTier'] ?? QuestTier::LOW);
         $existingTier = QuestTier::resolve(

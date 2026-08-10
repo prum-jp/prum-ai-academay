@@ -98,7 +98,7 @@
 
                         <template #meta>
                             <QuestSheetCreateChildMetaFields
-                                v-model:tool-id="childQuestForm.toolId"
+                                v-model:tool-ids="childQuestForm.toolIds"
                                 v-model:difficulty="childQuestForm.difficulty"
                                 v-model:quest-tier="childQuestForm.questTier"
                                 v-model:skill-grants="childQuestForm.skillGrants"
@@ -187,6 +187,8 @@
                         <QuestSheetCreateMetaFields
                             :form="questForm"
                             v-model:skill-grants="questForm.skillGrants"
+                            v-model:tool-ids="questForm.toolIds"
+                            :tools="tools"
                             show-skill-grants
                             :disabled="isSubmitting"
                         />
@@ -326,8 +328,8 @@ watch(
     },
 );
 
-watch(createType, (type) => {
-    if (type === 'personal' && tools.value.length === 0) {
+watch(createType, () => {
+    if (tools.value.length === 0) {
         void loadTools();
     }
 });
@@ -465,8 +467,6 @@ const onImported = async (): Promise<void> => {
 };
 
 onMounted(() => {
-    if (resolveInitialType() === 'personal') {
-        void loadTools();
-    }
+    void loadTools();
 });
 </script>

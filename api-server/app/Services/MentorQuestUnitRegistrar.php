@@ -11,6 +11,7 @@ class MentorQuestUnitRegistrar
 {
     public function __construct(
         private readonly QuestSkillGrantSync $questSkillGrantSync,
+        private readonly QuestToolSync $questToolSync,
     ) {}
 
     /**
@@ -92,11 +93,12 @@ class MentorQuestUnitRegistrar
         foreach ($quests as $questData) {
             $index++;
             $difficulty = \App\Support\QuestDifficulty::normalize($questData['difficulty'] ?? null);
+            $toolIds = $this->resolveToolIds($questData);
             $attributes = [
                 'title' => $questData['title'],
                 'description' => $questData['description'] ?? '',
                 'clear_condition' => $questData['clearCondition'] ?? '',
-                'tool_id' => $questData['toolId'] ?? null,
+                'tool_id' => $toolIds[0] ?? null,
                 'difficulty' => $difficulty,
                 'experience_points' => \App\Support\QuestDifficulty::experiencePoints($difficulty),
                 'sort_order' => $questData['sortOrder'] ?? $index,
@@ -111,6 +113,7 @@ class MentorQuestUnitRegistrar
             if ($existing !== null) {
                 $existing->update($attributes);
                 $this->questSkillGrantSync->syncForQuest($existing, $questData['skillGrants'] ?? []);
+                $this->questToolSync->syncForQuest($existing, $toolIds);
                 $keptIds[] = $existing->id;
 
                 continue;
@@ -127,6 +130,7 @@ class MentorQuestUnitRegistrar
                 'ends_at' => now()->addMonths(2)->toDateString(),
             ]);
             $this->questSkillGrantSync->syncForQuest($created, $questData['skillGrants'] ?? []);
+            $this->questToolSync->syncForQuest($created, $toolIds);
             $keptIds[] = $created->id;
         }
 
@@ -134,5 +138,26 @@ class MentorQuestUnitRegistrar
             ->whereNotIn('id', $keptIds)
             ->get()
             ->each(fn (Quest $quest) => $quest->delete());
+    }
+
+    /**
+     * @param  array{toolId?: int|null, toolIds?: list<int|null>}  $questData
+     * @return list<int>
+     */
+    private function resolveToolIds(array $questData): array
+    {
+        $toolIds = $questData['toolIds'] ?? [];
+        if ($toolIds !== []) {
+            return array_values(array_filter(
+                array_map(static fn ($id) => $id !== null ? (int) $id : null, $toolIds),
+                static fn ($id) => $id !== null && $id > 0,
+            ));
+        }
+
+        if (($questData['toolId'] ?? null) !== null) {
+            return [(int) $questData['toolId']];
+        }
+
+        return [];
     }
 }

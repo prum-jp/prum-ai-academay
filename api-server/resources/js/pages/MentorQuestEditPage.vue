@@ -47,7 +47,7 @@
 
                     <template #meta>
                         <QuestSheetCreateChildMetaFields
-                            v-model:tool-id="personalToolId"
+                            v-model:tool-ids="personalToolIds"
                             v-model:difficulty="personalDifficulty"
                             v-model:quest-tier="personalQuestTier"
                             v-model:skill-grants="personalSkillGrants"
@@ -146,7 +146,7 @@ const errorMessage = ref('');
 const tools = ref<MentorTool[]>([]);
 
 const personalTitle = ref('');
-const personalToolId = ref<number | null>(null);
+const personalToolIds = ref<number[]>([]);
 const personalDifficulty = ref<number | null>(null);
 const personalQuestTier = ref<QuestTier>(DEFAULT_QUEST_TIER);
 const personalSkillGrants = ref<SkillKey[]>(createEmptySkillGrants());
@@ -178,7 +178,7 @@ const loadQuest = async (): Promise<void> => {
         if (detail.type === 'personal') {
             tools.value = await fetchMentorTools();
             personalTitle.value = detail.title;
-            personalToolId.value = detail.toolId;
+            personalToolIds.value = detail.toolIds ?? (detail.toolId !== null ? [detail.toolId] : []);
             personalDifficulty.value = detail.difficulty;
             personalQuestTier.value = detail.questTier ?? DEFAULT_QUEST_TIER;
             personalSkillGrants.value = detail.skillGrants ?? createEmptySkillGrants();
@@ -230,7 +230,7 @@ const onSubmitPersonal = async (): Promise<void> => {
             title: personalTitle.value.trim(),
             description: serialized.description,
             clearCondition: serialized.clearCondition,
-            toolId: personalToolId.value,
+            toolIds: [...personalToolIds.value],
             difficulty: personalDifficulty.value,
             questTier: personalQuestTier.value,
             skillGrants: [...personalSkillGrants.value],

@@ -38,6 +38,9 @@ class UpdateMentorQuestRequest extends FormRequest
             'rewardText' => ['nullable', 'string', 'max:500'],
             'badgeLabel' => ['nullable', 'string', 'max:255'],
             'difficulty' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'toolId' => ['nullable', 'integer', 'exists:tools,id'],
+            'toolIds' => ['nullable', 'array'],
+            'toolIds.*' => ['integer', 'exists:tools,id'],
             'skillGrants' => ['nullable', 'array'],
             'skillGrants.*' => ['string', Rule::in(SkillKeys::ALL)],
         ];

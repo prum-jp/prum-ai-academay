@@ -59,21 +59,12 @@
             </div>
 
             <div class="input-group">
-                <label :for="`child-tool-${index}`">{{ mentorChildQuestFormLabels.tool }}</label>
-                <select
-                    :id="`child-tool-${index}`"
-                    v-model="quest.toolId"
+                <label>{{ mentorChildQuestFormLabels.tool }}</label>
+                <MentorToolSelectField
+                    v-model="quest.toolIds"
+                    :tools="tools"
                     :disabled="disabled"
-                >
-                    <option :value="null">{{ mentorChildQuestFormLabels.toolNone }}</option>
-                    <option
-                        v-for="tool in tools"
-                        :key="tool.id"
-                        :value="tool.id"
-                    >
-                        {{ tool.name }}
-                    </option>
-                </select>
+                />
             </div>
 
             <div class="input-group">
@@ -130,6 +121,7 @@ import { mentorChildQuestFormLabels } from '@/constants/questAdmin';
 import { QUEST_TIER_OPTIONS } from '@/constants/questTier';
 import { questSheetConfig } from '@/constants/questSheet';
 import QuestSkillGrantFields from '@/components/rpg/QuestSkillGrantFields.vue';
+import MentorToolSelectField from '@/components/rpg/MentorToolSelectField.vue';
 
 defineProps<{
     quests: MentorChildQuestInput[];

@@ -32,7 +32,7 @@ const CHILD_QUEST_FIELDS = ['title', 'description', 'clearCondition'] as const;
 
 export interface ChildQuestCreateDraft {
     title: string;
-    toolId: number | null;
+    toolIds: number[];
     difficulty: number | null;
     questTier: QuestTier;
     skillGrants: SkillKey[];
@@ -57,11 +57,12 @@ const createEmptyQuestForm = (
     badgeLabel: '',
     difficulty: null,
     skillGrants: createEmptySkillGrants(),
+    toolIds: [],
 });
 
 const createEmptyChildQuestForm = () => ({
     title: '',
-    toolId: null as number | null,
+    toolIds: [] as number[],
     difficulty: null as number | null,
     questTier: DEFAULT_QUEST_TIER as QuestTier,
     skillGrants: createEmptySkillGrants(),
@@ -83,7 +84,7 @@ const buildChildQuestPayload = (
         title: draft.title.trim(),
         description: serialized.description,
         clearCondition: serialized.clearCondition,
-        toolId: draft.toolId,
+        toolIds: draft.toolIds,
         sortOrder: draft.sortOrder,
         difficulty: draft.difficulty,
         questTier: draft.questTier,
@@ -165,7 +166,7 @@ export function useMentorQuestCreate(initialType: MentorQuestCreateType = 'team'
 
         childQuests.value.push({
             title: childQuestForm.title.trim(),
-            toolId: childQuestForm.toolId,
+            toolIds: [...childQuestForm.toolIds],
             difficulty: childQuestForm.difficulty,
             questTier: childQuestForm.questTier,
             skillGrants: [...childQuestForm.skillGrants],
@@ -192,7 +193,7 @@ export function useMentorQuestCreate(initialType: MentorQuestCreateType = 'team'
         if (childQuestForm.title.trim()) {
             drafts.push({
                 title: childQuestForm.title.trim(),
-                toolId: childQuestForm.toolId,
+                toolIds: [...childQuestForm.toolIds],
                 difficulty: childQuestForm.difficulty,
                 questTier: childQuestForm.questTier,
                 skillGrants: [...childQuestForm.skillGrants],
@@ -279,6 +280,7 @@ export function useMentorQuestCreate(initialType: MentorQuestCreateType = 'team'
                 badgeLabel: questForm.badgeLabel.trim(),
                 difficulty: questForm.difficulty ?? null,
                 skillGrants: [...questForm.skillGrants],
+                toolIds: [...questForm.toolIds],
             });
 
             resetForms();

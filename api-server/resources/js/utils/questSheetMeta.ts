@@ -13,6 +13,7 @@ import { formatSkillGrants } from '@/utils/skillGrants';
 
 export interface QuestMetaDisplaySource {
     tool?: { name?: string | null } | null;
+    tools?: Array<{ name?: string | null }>;
     difficulty: number | null;
     experiencePoints?: number;
     questTier?: QuestTier;
@@ -47,13 +48,25 @@ export const formatQuestSkillLabel = (source: QuestMetaDisplaySource): string =>
 export const formatUnitSkillLabel = (skillGrants: SkillKey[]): string =>
     formatSkillGrants(skillGrants);
 
+export const formatQuestToolLabel = (source: QuestMetaDisplaySource): string => {
+    const toolNames = (source.tools ?? [])
+        .map((tool) => tool.name?.trim())
+        .filter((name): name is string => Boolean(name));
+
+    if (toolNames.length > 0) {
+        return toolNames.join(' / ');
+    }
+
+    return source.tool?.name?.trim() || '—';
+};
+
 export const buildQuestMetaRows = (quest: QuestItem | QuestMetaDisplaySource): QuestSheetMetaRow[] => {
     const { metaLabels } = questSheetConfig;
 
     return [
         {
             label: metaLabels.recommendedTool,
-            value: quest.tool?.name?.trim() || '—',
+            value: formatQuestToolLabel(quest),
         },
         {
             label: metaLabels.difficulty,

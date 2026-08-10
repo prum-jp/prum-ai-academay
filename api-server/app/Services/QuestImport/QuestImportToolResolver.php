@@ -22,6 +22,68 @@ class QuestImportToolResolver
     }
 
     /**
+     * @return list<string>
+     */
+    public function splitToolNames(string $raw): array
+    {
+        $trimmed = trim($raw);
+        if ($trimmed === '') {
+            return [];
+        }
+
+        $segments = preg_split('/[,、/／|\n|・]+/u', $trimmed) ?: [];
+        $names = [];
+
+        foreach ($segments as $segment) {
+            $part = trim($segment);
+            if ($part === '') {
+                continue;
+            }
+
+            $latinJpParts = preg_split('/\s+(?=[A-Z][a-zA-Z0-9]*[\x{3000}-\x{9fff}])/u', $part) ?: [$part];
+            foreach ($latinJpParts as $name) {
+                $name = trim($name);
+                if ($name !== '') {
+                    $names[] = $name;
+                }
+            }
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    /**
+     * @param  Collection<string, int>  $toolCodes
+     * @return list<int>
+     */
+    public function resolveToolIds(string $toolRef, Collection $toolCodes): array
+    {
+        $ids = [];
+
+        foreach ($this->splitToolNames($toolRef) as $name) {
+            $toolId = $this->resolveToolId($name, $toolCodes);
+            if ($toolId !== null && ! in_array($toolId, $ids, true)) {
+                $ids[] = $toolId;
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * @param  Collection<string, int>  $toolCodes
+     */
+    public function resolveFirstToolId(string $toolRef, Collection $toolCodes): ?int
+    {
+        $names = $this->splitToolNames($toolRef);
+        if ($names === []) {
+            return null;
+        }
+
+        return $this->resolveToolId($names[0], $toolCodes);
+    }
+
+    /**
      * @param  Collection<string, int>  $toolCodes
      */
     public function resolveToolId(string $toolRef, Collection $toolCodes): ?int
@@ -70,8 +132,8 @@ class QuestImportToolResolver
             }
 
             $toolRef = trim((string) ($item['toolCode'] ?? ''));
-            if ($toolRef !== '') {
-                $toolRefs[] = $toolRef;
+            foreach ($this->splitToolNames($toolRef) as $name) {
+                $toolRefs[] = $name;
             }
         }
 

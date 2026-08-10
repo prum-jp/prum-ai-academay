@@ -11,6 +11,7 @@ class MentorQuestRegistrar
 {
     public function __construct(
         private readonly QuestSkillGrantSync $questSkillGrantSync,
+        private readonly QuestToolSync $questToolSync,
     ) {}
 
     /**
@@ -24,13 +25,16 @@ class MentorQuestRegistrar
      *     rewardText?: string|null,
      *     badgeLabel?: string|null,
      *     difficulty?: int|null,
-     *     skillGrants?: list<string>
+     *     skillGrants?: list<string>,
+     *     toolId?: int|null,
+     *     toolIds?: list<int|null>
      * }  $payload
      */
     public function register(array $payload): Quest
     {
         return DB::transaction(function () use ($payload): Quest {
             $type = $payload['type'];
+            $toolIds = $this->resolveToolIds($payload);
 
             $difficulty = QuestDifficulty::normalize($payload['difficulty'] ?? null);
 
@@ -40,7 +44,7 @@ class MentorQuestRegistrar
                 'clear_condition' => $payload['clearCondition'] ?? '',
                 'type' => $type,
                 'quest_unit_id' => null,
-                'tool_id' => null,
+                'tool_id' => $toolIds[0] ?? null,
                 'is_required' => $payload['isRequired'] ?? true,
                 'unlock_level' => $payload['unlockLevel'] ?? null,
                 'reward_text' => $payload['rewardText'] ?? '',
@@ -58,8 +62,9 @@ class MentorQuestRegistrar
             ]);
 
             $this->questSkillGrantSync->syncForQuest($quest, $payload['skillGrants'] ?? []);
+            $this->questToolSync->syncForQuest($quest, $toolIds);
 
-            return $quest->load('rewards');
+            return $quest->load(['rewards', 'tools']);
         });
     }
 
@@ -73,12 +78,15 @@ class MentorQuestRegistrar
      *     rewardText?: string|null,
      *     badgeLabel?: string|null,
      *     difficulty?: int|null,
-     *     skillGrants?: list<string>
+     *     skillGrants?: list<string>,
+     *     toolId?: int|null,
+     *     toolIds?: list<int|null>
      * }  $payload
      */
     public function update(Quest $quest, array $payload): Quest
     {
         return DB::transaction(function () use ($quest, $payload): Quest {
+            $toolIds = $this->resolveToolIds($payload);
             $difficulty = QuestDifficulty::normalize($payload['difficulty'] ?? null);
 
             $quest->update([
@@ -91,11 +99,13 @@ class MentorQuestRegistrar
                 'badge_label' => $payload['badgeLabel'] ?? null,
                 'difficulty' => $difficulty,
                 'experience_points' => QuestDifficulty::experiencePoints($difficulty),
+                'tool_id' => $toolIds[0] ?? null,
             ]);
 
             $this->questSkillGrantSync->syncForQuest($quest, $payload['skillGrants'] ?? []);
+            $this->questToolSync->syncForQuest($quest, $toolIds);
 
-            return $quest->fresh(['rewards']);
+            return $quest->fresh(['rewards', 'tools']);
         });
     }
 
@@ -105,6 +115,7 @@ class MentorQuestRegistrar
      *     description?: string|null,
      *     clearCondition?: string|null,
      *     toolId?: int|null,
+     *     toolIds?: list<int|null>,
      *     estimatedDuration?: string|null,
      *     difficulty?: int|null,
      *     skillGrants?: list<string>,
@@ -113,13 +124,14 @@ class MentorQuestRegistrar
      */
     public function updatePersonal(Quest $quest, array $payload): Quest
     {
+        $toolIds = $this->resolveToolIds($payload);
         $difficulty = QuestDifficulty::normalize($payload['difficulty'] ?? null);
 
         $attributes = [
             'title' => $payload['title'],
             'description' => $payload['description'] ?? '',
             'clear_condition' => $payload['clearCondition'] ?? '',
-            'tool_id' => $payload['toolId'] ?? null,
+            'tool_id' => $toolIds[0] ?? null,
             'estimated_duration' => ($payload['estimatedDuration'] ?? null) !== null && $payload['estimatedDuration'] !== ''
                 ? (string) $payload['estimatedDuration']
                 : null,
@@ -131,8 +143,30 @@ class MentorQuestRegistrar
         $quest->update($attributes);
 
         $this->questSkillGrantSync->syncForQuest($quest, $payload['skillGrants'] ?? []);
+        $this->questToolSync->syncForQuest($quest, $toolIds);
 
-        return $quest->fresh(['tool', 'questUnit', 'rewards']);
+        return $quest->fresh(['tool', 'tools', 'questUnit', 'rewards']);
+    }
+
+    /**
+     * @param  array{toolId?: int|null, toolIds?: list<int|null>}  $payload
+     * @return list<int>
+     */
+    private function resolveToolIds(array $payload): array
+    {
+        $toolIds = $payload['toolIds'] ?? [];
+        if ($toolIds !== []) {
+            return array_values(array_filter(
+                array_map(static fn ($id) => $id !== null ? (int) $id : null, $toolIds),
+                static fn ($id) => $id !== null && $id > 0,
+            ));
+        }
+
+        if (($payload['toolId'] ?? null) !== null) {
+            return [(int) $payload['toolId']];
+        }
+
+        return [];
     }
 
     public function setPublished(Quest $quest, bool $isPublished): Quest

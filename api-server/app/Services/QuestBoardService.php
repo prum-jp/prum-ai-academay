@@ -28,6 +28,7 @@ class QuestBoardService
             ->with([
                 'rewards',
                 'tool',
+                'tools',
                 'progressRecords' => function ($query) use ($student): void {
                     $query->where('user_id', $student->id);
                 },
@@ -48,6 +49,6 @@ class QuestBoardService
             'applications as applications_count' => function ($query): void {
                 $query->whereIn('status', ['applied', 'approved']);
             },
-        ])->load(['rewards', 'tool']);
+        ])->load(['rewards', 'tool', 'tools']);
     }
 }

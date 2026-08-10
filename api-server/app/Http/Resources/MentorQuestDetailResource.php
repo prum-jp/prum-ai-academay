@@ -28,6 +28,7 @@ class MentorQuestDetailResource extends JsonResource
             'type' => $this->type,
             'sortOrder' => (int) $this->sort_order,
             'toolId' => $this->tool_id,
+            'toolIds' => $this->whenLoaded('tools', fn () => $this->tools->pluck('id')->values()->all(), []),
             'tool' => $this->whenLoaded('tool', fn () => $this->tool === null ? null : [
                 'id' => $this->tool->id,
                 'code' => $this->tool->code,

@@ -5,6 +5,7 @@ namespace App\Services\QuestImport;
 use App\Models\Quest;
 use App\Models\QuestUnit;
 use App\Services\QuestSkillGrantSync;
+use App\Services\QuestToolSync;
 use App\Support\QuestDifficulty;
 use App\Support\QuestTier;
 use Illuminate\Support\Collection;
@@ -14,6 +15,7 @@ class QuestImportItemApplier
     public function __construct(
         private readonly QuestImportToolResolver $toolResolver,
         private readonly QuestSkillGrantSync $questSkillGrantSync,
+        private readonly QuestToolSync $questToolSync,
     ) {}
 
     /**
@@ -79,7 +81,8 @@ class QuestImportItemApplier
     {
         $unit = QuestUnit::query()->where('title', (string) $item['unitTitle'])->firstOrFail();
         $toolRef = trim((string) ($item['toolCode'] ?? ''));
-        $toolId = $toolRef !== '' ? $this->toolResolver->resolveToolId($toolRef, $toolCodes) : null;
+        $toolIds = $toolRef !== '' ? $this->toolResolver->resolveToolIds($toolRef, $toolCodes) : [];
+        $toolId = $toolIds[0] ?? null;
         $existingId = $item['existingId'] ?? null;
 
         $difficulty = QuestDifficulty::normalize($item['difficulty'] ?? null);
@@ -118,6 +121,7 @@ class QuestImportItemApplier
         }
 
         $this->questSkillGrantSync->syncForQuest($quest, $item['skillGrants'] ?? []);
+        $this->questToolSync->syncForQuest($quest, $toolIds);
 
         return [
             'kind' => 'child_quest',

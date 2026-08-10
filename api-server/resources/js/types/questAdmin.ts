@@ -48,7 +48,8 @@ export interface CreateMentorQuestUnitChildQuestPayload {
     title: string;
     description: string;
     clearCondition: string;
-    toolId: number | null;
+    toolId?: number | null;
+    toolIds?: number[];
     sortOrder: number;
     difficulty?: number | null;
     estimatedDuration?: string;
@@ -72,6 +73,8 @@ export interface CreateMentorQuestPayload {
     badgeLabel: string;
     difficulty: number | null;
     skillGrants: SkillKey[];
+    toolId?: number | null;
+    toolIds?: number[];
 }
 
 export interface MentorTool {
@@ -87,6 +90,7 @@ export interface MentorChildQuestInput {
     description: string;
     clearCondition: string;
     toolId: number | null;
+    toolIds: number[];
     sortOrder: number;
     difficulty?: number | null;
     estimatedDuration?: string;
@@ -106,6 +110,7 @@ export interface MentorQuestUnitDetail {
         description: string;
         clearCondition: string;
         toolId: number | null;
+        toolIds: number[];
         sortOrder: number;
         isPublished: boolean;
         difficulty: number | null;
@@ -124,6 +129,7 @@ export interface UpdateMentorQuestUnitPayload {
         description: string;
         clearCondition: string;
         toolId: number | null;
+        toolIds: number[];
         sortOrder: number;
         difficulty?: number | null;
         estimatedDuration?: string;
@@ -140,6 +146,7 @@ export interface MentorQuestDetail {
     type: QuestType;
     sortOrder: number;
     toolId: number | null;
+    toolIds?: number[];
     tool: { id: number; code: string; name: string } | null;
     estimatedDuration: string | null;
     difficulty: number | null;
@@ -159,7 +166,8 @@ export interface UpdateMentorPersonalQuestPayload {
     title: string;
     description: string;
     clearCondition: string;
-    toolId: number | null;
+    toolId?: number | null;
+    toolIds?: number[];
     estimatedDuration?: string;
     difficulty: number | null;
     skillGrants: SkillKey[];
@@ -176,4 +184,6 @@ export interface UpdateMentorQuestPayload {
     badgeLabel: string;
     difficulty: number | null;
     skillGrants: SkillKey[];
+    toolId?: number | null;
+    toolIds?: number[];
 }

@@ -9,7 +9,6 @@ use App\Support\QuestUnitProgressStatus;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator as Paginator;
-use Illuminate\Support\Collection;
 
 class QuestUnitService
 {
@@ -31,11 +30,86 @@ class QuestUnitService
 
     public function paginateForStudent(User $student, int $page, ?string $progressFilter = null): LengthAwarePaginator
     {
-        $units = $this->unitQuery($student)->get();
+        $page = max(1, $page);
         $normalizedFilter = $this->normalizeProgressFilter($progressFilter);
-        $filtered = $this->filterUnitsByProgress($units, $normalizedFilter);
 
-        return $this->paginateCollection($filtered, max(1, $page), self::PER_PAGE);
+        if ($normalizedFilter === 'all') {
+            return $this->unitQuery($student)->paginate(self::PER_PAGE, ['*'], 'page', $page);
+        }
+
+        return $this->paginateFilteredUnits($student, $page, $normalizedFilter);
+    }
+
+    private function paginateFilteredUnits(User $student, int $page, string $progressFilter): LengthAwarePaginator
+    {
+        $assignedQuestIds = $this->assignedQuestIdsFor($student);
+
+        $units = $this->assignmentQuery
+            ->assignedUnits($student)
+            ->with([
+                'quests' => function ($query) use ($student, $assignedQuestIds): void {
+                    $query
+                        ->where('type', 'personal')
+                        ->when(
+                            $assignedQuestIds !== [],
+                            fn ($questQuery) => $questQuery->whereIn('id', $assignedQuestIds),
+                            fn ($questQuery) => $questQuery->whereRaw('0 = 1'),
+                        )
+                        ->with([
+                            'progressRecords' => function ($progressQuery) use ($student): void {
+                                $progressQuery->where('user_id', $student->id);
+                            },
+                        ])
+                        ->orderBy('sort_order')
+                        ->orderBy('id');
+                },
+            ])
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        $filteredIds = $units
+            ->filter(fn (QuestUnit $unit) => $this->matchesProgressFilter($unit, $progressFilter))
+            ->pluck('id')
+            ->values();
+
+        $total = $filteredIds->count();
+        $pageIds = $filteredIds
+            ->slice(($page - 1) * self::PER_PAGE, self::PER_PAGE)
+            ->values();
+
+        if ($pageIds->isEmpty()) {
+            return $this->emptyPaginator($total, $page);
+        }
+
+        $items = $this->unitQuery($student)
+            ->whereIn('id', $pageIds->all())
+            ->get()
+            ->sortBy(fn (QuestUnit $unit) => $pageIds->search($unit->id))
+            ->values();
+
+        return new Paginator(
+            $items,
+            $total,
+            self::PER_PAGE,
+            $page,
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ],
+        );
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function assignedQuestIdsFor(User $student): array
+    {
+        return $this->assignmentQuery
+            ->assignedPersonalQuests($student)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     /**
@@ -43,11 +117,7 @@ class QuestUnitService
      */
     private function unitQuery(User $student): Builder
     {
-        $assignedQuestIds = $this->assignmentQuery
-            ->assignedPersonalQuests($student)
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
+        $assignedQuestIds = $this->assignedQuestIdsFor($student);
 
         return $this->assignmentQuery
             ->assignedUnits($student)
@@ -64,6 +134,7 @@ class QuestUnitService
                         ->with([
                             'rewards',
                             'tool',
+                            'tools',
                             'progressRecords' => function ($progressQuery) use ($student): void {
                                 $progressQuery->where('user_id', $student->id);
                             },
@@ -85,21 +156,6 @@ class QuestUnitService
         return in_array($progressFilter, self::PROGRESS_FILTERS, true)
             ? $progressFilter
             : 'all';
-    }
-
-    /**
-     * @param  Collection<int, QuestUnit>  $units
-     * @return Collection<int, QuestUnit>
-     */
-    private function filterUnitsByProgress(Collection $units, string $progressFilter): Collection
-    {
-        if ($progressFilter === 'all') {
-            return $units->values();
-        }
-
-        return $units
-            ->filter(fn (QuestUnit $unit) => $this->matchesProgressFilter($unit, $progressFilter))
-            ->values();
     }
 
     private function matchesProgressFilter(QuestUnit $unit, string $progressFilter): bool
@@ -132,18 +188,12 @@ class QuestUnitService
         return QuestUnitProgressStatus::resolveFromQuests($questStatuses);
     }
 
-    /**
-     * @param  Collection<int, QuestUnit>  $items
-     */
-    private function paginateCollection(Collection $items, int $page, int $perPage): LengthAwarePaginator
+    private function emptyPaginator(int $total, int $page): Paginator
     {
-        $total = $items->count();
-        $slice = $items->slice(($page - 1) * $perPage, $perPage)->values();
-
         return new Paginator(
-            $slice,
+            collect(),
             $total,
-            $perPage,
+            self::PER_PAGE,
             $page,
             [
                 'path' => request()->url(),

@@ -28,6 +28,7 @@ export interface QuestItem {
     type: QuestType;
     questUnitId?: number | null;
     tool: QuestTool | null;
+    tools?: QuestTool[];
     isRequired: boolean;
     unlockLevel: number | null;
     questTier?: QuestTier;

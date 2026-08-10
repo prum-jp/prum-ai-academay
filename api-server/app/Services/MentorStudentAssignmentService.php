@@ -130,78 +130,98 @@ class MentorStudentAssignmentService
     {
         $studentIds = User::query()
             ->where('role', User::ROLE_STUDENT)
-            ->pluck('id');
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id);
 
         if ($studentIds->isEmpty()) {
             return 0;
         }
 
         $now = now();
-        $count = 0;
 
-        DB::transaction(function () use ($studentIds, $unit, $mentor, $now, &$count): void {
-            foreach ($studentIds as $studentId) {
-                $assignment = StudentQuestUnitAssignment::query()->firstOrCreate(
-                    [
-                        'user_id' => $studentId,
-                        'quest_unit_id' => $unit->id,
-                    ],
-                    [
-                        'assigned_by' => $mentor->id,
-                        'assigned_at' => $now,
-                    ],
-                );
+        return DB::transaction(function () use ($studentIds, $unit, $mentor, $now): int {
+            $existingIds = StudentQuestUnitAssignment::query()
+                ->where('quest_unit_id', $unit->id)
+                ->whereIn('user_id', $studentIds)
+                ->pluck('user_id')
+                ->map(fn ($id) => (int) $id);
 
-                if ($assignment->wasRecentlyCreated) {
-                    $count++;
-                }
+            $newIds = $studentIds->diff($existingIds)->values();
+
+            if ($newIds->isEmpty()) {
+                return 0;
             }
-        });
 
-        return $count;
+            StudentQuestUnitAssignment::query()->insert(
+                $newIds->map(fn (int $studentId) => [
+                    'user_id' => $studentId,
+                    'quest_unit_id' => $unit->id,
+                    'assigned_by' => $mentor->id,
+                    'assigned_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ])->all(),
+            );
+
+            return $newIds->count();
+        });
     }
 
     public function assignCurriculumToAllStudents(Curriculum $curriculum, User $mentor): int
     {
         $studentIds = User::query()
             ->where('role', User::ROLE_STUDENT)
-            ->pluck('id');
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id);
 
         if ($studentIds->isEmpty()) {
             return 0;
         }
 
         $now = now();
-        $count = 0;
 
-        DB::transaction(function () use ($studentIds, $curriculum, $mentor, $now, &$count): void {
-            foreach ($studentIds as $studentId) {
-                $assignment = StudentCurriculumAssignment::query()->firstOrCreate(
-                    [
-                        'user_id' => $studentId,
-                        'curriculum_id' => $curriculum->id,
-                    ],
-                    [
-                        'assigned_by' => $mentor->id,
-                        'assigned_at' => $now,
-                    ],
-                );
+        return DB::transaction(function () use ($studentIds, $curriculum, $mentor, $now): int {
+            $existingIds = StudentCurriculumAssignment::query()
+                ->where('curriculum_id', $curriculum->id)
+                ->whereIn('user_id', $studentIds)
+                ->pluck('user_id')
+                ->map(fn ($id) => (int) $id);
 
-                if ($assignment->wasRecentlyCreated) {
-                    $count++;
-                    $student = User::query()->find($studentId);
-                    if ($student !== null) {
-                        $this->studentNotificationService->notifyCurriculumAdded(
-                            $student,
-                            $curriculum,
-                            $mentor,
-                        );
-                    }
+            $newIds = $studentIds->diff($existingIds)->values();
+
+            if ($newIds->isEmpty()) {
+                return 0;
+            }
+
+            StudentCurriculumAssignment::query()->insert(
+                $newIds->map(fn (int $studentId) => [
+                    'user_id' => $studentId,
+                    'curriculum_id' => $curriculum->id,
+                    'assigned_by' => $mentor->id,
+                    'assigned_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ])->all(),
+            );
+
+            $students = User::query()
+                ->whereIn('id', $newIds->all())
+                ->get()
+                ->keyBy('id');
+
+            foreach ($newIds as $studentId) {
+                $student = $students->get($studentId);
+                if ($student !== null) {
+                    $this->studentNotificationService->notifyCurriculumAdded(
+                        $student,
+                        $curriculum,
+                        $mentor,
+                    );
                 }
             }
-        });
 
-        return $count;
+            return $newIds->count();
+        });
     }
 
     /**

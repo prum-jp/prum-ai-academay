@@ -44,7 +44,7 @@ class MentorQuestUnitController extends Controller
     {
         $questUnit->load([
             'rewards',
-            'quests' => fn ($query) => $query->with('rewards')->orderBy('sort_order')->orderBy('id'),
+            'quests' => fn ($query) => $query->with(['rewards', 'tools'])->orderBy('sort_order')->orderBy('id'),
         ]);
 
         return response()->json([

@@ -45,6 +45,7 @@ interface QuestEditForm {
     badgeLabel: string;
     difficulty: number | null;
     skillGrants: SkillKey[];
+    toolIds: number[];
 }
 
 const createUnitForm = (): UnitEditForm => ({
@@ -62,6 +63,7 @@ const createQuestForm = (): QuestEditForm => ({
     badgeLabel: '',
     difficulty: null,
     skillGrants: createEmptySkillGrants(),
+    toolIds: [],
 });
 
 export function useMentorQuestEdit() {
@@ -111,6 +113,7 @@ export function useMentorQuestEdit() {
                 description: quest.description,
                 clearCondition: quest.clearCondition,
                 toolId: quest.toolId,
+                toolIds: quest.toolIds ?? (quest.toolId !== null ? [quest.toolId] : []),
                 sortOrder: quest.sortOrder,
                 difficulty: quest.difficulty,
                 skillGrants: quest.skillGrants ?? createEmptySkillGrants(),
@@ -146,6 +149,7 @@ export function useMentorQuestEdit() {
             description: '',
             clearCondition: '',
             toolId: null,
+            toolIds: [],
             sortOrder: unitForm.quests.length + 1,
             difficulty: null,
             skillGrants: createEmptySkillGrants(),
@@ -173,7 +177,8 @@ export function useMentorQuestEdit() {
                     title: quest.title.trim(),
                     description: quest.description.trim(),
                     clearCondition: quest.clearCondition.trim(),
-                    toolId: quest.toolId,
+                    toolId: quest.toolIds[0] ?? null,
+                    toolIds: [...quest.toolIds],
                     sortOrder: index + 1,
                     difficulty: quest.difficulty ?? null,
                     skillGrants: [...quest.skillGrants],
@@ -213,6 +218,7 @@ export function useMentorQuestEdit() {
                 badgeLabel: questForm.badgeLabel.trim(),
                 difficulty: questForm.difficulty ?? null,
                 skillGrants: [...questForm.skillGrants],
+                toolIds: [...questForm.toolIds],
             });
             return true;
         } catch (error: unknown) {

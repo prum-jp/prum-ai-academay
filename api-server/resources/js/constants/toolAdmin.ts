@@ -35,3 +35,8 @@ export const mentorToolFormPlaceholders = {
 } as const;
 
 export const mentorToolFormNote = '識別コードは英数字・ハイフン・アンダースコアのみ使用できます。';
+
+export const mentorToolSelectConfig = {
+    empty: '登録されているAIツールがありません。',
+    addLinkLabel: 'AIマスタで追加する',
+} as const;

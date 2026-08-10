@@ -10,7 +10,7 @@ import type { SkillKey } from '@/constants/skills';
 
 export interface MentorQuestDisplayForm {
     title: string;
-    toolId: number | null;
+    toolIds: number[];
     difficulty: number | null;
     questTier: QuestTier;
     skillGrants: SkillKey[];
@@ -23,12 +23,13 @@ export interface MentorQuestBoardMetaForm {
     difficulty: number | null;
     isRequired: boolean;
     skillGrants: SkillKey[];
+    toolIds: number[];
 }
 
 export function createEmptyMentorQuestDisplayForm(): MentorQuestDisplayForm {
     return {
         title: '',
-        toolId: null,
+        toolIds: [],
         difficulty: null,
         questTier: DEFAULT_QUEST_TIER,
         skillGrants: createEmptySkillGrants(),
@@ -43,6 +44,7 @@ export function createEmptyMentorQuestBoardMetaForm(): MentorQuestBoardMetaForm 
         difficulty: null,
         isRequired: true,
         skillGrants: createEmptySkillGrants(),
+        toolIds: [],
     };
 }
 
@@ -54,7 +56,7 @@ export function mapQuestDetailToDisplayForms(detail: MentorQuestDetail): {
     return {
         displayForm: {
             title: detail.title,
-            toolId: detail.toolId,
+            toolIds: detail.toolIds ?? (detail.toolId !== null ? [detail.toolId] : []),
             difficulty: detail.difficulty,
             questTier: detail.questTier ?? DEFAULT_QUEST_TIER,
             skillGrants: detail.skillGrants ?? createEmptySkillGrants(),
@@ -66,6 +68,7 @@ export function mapQuestDetailToDisplayForms(detail: MentorQuestDetail): {
             difficulty: detail.difficulty,
             isRequired: detail.isRequired,
             skillGrants: detail.skillGrants ?? createEmptySkillGrants(),
+            toolIds: detail.toolIds ?? (detail.toolId !== null ? [detail.toolId] : []),
         },
         sectionForm: parseQuestDescriptionSections(detail.description, detail.clearCondition),
     };
