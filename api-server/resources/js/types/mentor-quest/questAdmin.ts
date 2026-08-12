@@ -148,6 +148,7 @@ export interface MentorQuestDetail {
     toolId: number | null;
     toolIds?: number[];
     tool: { id: number; code: string; name: string } | null;
+    tools?: Array<{ id: number; code: string; name: string; icon?: string | null }>;
     estimatedDuration: string | null;
     difficulty: number | null;
     experiencePoints: number;

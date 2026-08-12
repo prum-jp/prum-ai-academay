@@ -36,13 +36,8 @@ export const getQuestProgressActions = (
 
 export const getMentorQuestProgressActions = (
     current: QuestProgressStatus,
-): QuestProgressStatus[] => {
-    if (current === 'review_requested') {
-        return ['completed', 'rejected'];
-    }
-
-    return [];
-};
+): QuestProgressStatus[] =>
+    questProgressStatuses.filter((status) => status !== current);
 
 export const getQuestProgressActionsForRole = (
     current: QuestProgressStatus,

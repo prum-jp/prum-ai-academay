@@ -109,6 +109,7 @@ const metaRows = computed(() => {
 
     return buildQuestMetaRows({
         tool: quest.value.tool,
+        tools: quest.value.tools,
         difficulty: quest.value.difficulty,
         experiencePoints: quest.value.experiencePoints,
         questTier: quest.value.questTier,

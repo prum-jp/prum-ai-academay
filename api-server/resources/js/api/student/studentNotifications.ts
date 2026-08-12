@@ -10,12 +10,6 @@ export const fetchStudentNotifications = async (): Promise<StudentNotificationLi
     return data;
 };
 
-export const markStudentNotificationAsRead = async (
-    notificationId: number,
-): Promise<StudentNotificationItem> => {
-    const { data } = await axios.patch<{ data: StudentNotificationItem }>(
-        `/api/notifications/${notificationId}/read`,
-    );
-
-    return data.data;
+export const deleteStudentNotification = async (notificationId: number): Promise<void> => {
+    await axios.delete(`/api/notifications/${notificationId}`);
 };

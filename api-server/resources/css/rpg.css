@@ -2120,15 +2120,13 @@ body {
     background: #fff;
     color: var(--orange-main);
     cursor: pointer;
-    box-shadow: 0 3px 0 var(--orange-sub);
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 
 .rpg-modal-close:active {
-    transform: translateY(3px);
-    box-shadow: 0 0 0 var(--bg-dark);
+    background: #fff8f0;
 }
 
 .rpg-modal-body {

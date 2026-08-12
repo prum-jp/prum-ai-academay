@@ -12,6 +12,7 @@ use App\Http\Controllers\MentorQuestUnitController;
 use App\Http\Controllers\MentorStudentQuestUnitAssignmentController;
 use App\Http\Controllers\MentorStudentAssignmentController;
 use App\Http\Controllers\MentorQuestProgressController;
+use App\Http\Controllers\MentorNotificationController;
 use App\Http\Controllers\MentorReviewRequestController;
 use App\Http\Controllers\MentorStudentController;
 use App\Http\Controllers\MentorToolController;
@@ -48,6 +49,7 @@ Route::prefix('api')->group(function (): void {
     Route::middleware(['auth', 'student'])->group(function (): void {
         Route::get('/notifications', [StudentNotificationController::class, 'index']);
         Route::patch('/notifications/{id}/read', [StudentNotificationController::class, 'markAsRead']);
+        Route::delete('/notifications/{id}', [StudentNotificationController::class, 'destroy']);
         Route::patch('/profile', [ProfileController::class, 'update']);
         Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
         Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
@@ -55,6 +57,8 @@ Route::prefix('api')->group(function (): void {
 
     Route::middleware(['auth', 'mentor'])->group(function (): void {
         Route::get('/mentor/students', [MentorStudentController::class, 'index']);
+        Route::get('/mentor/notifications', [MentorNotificationController::class, 'index']);
+        Route::delete('/mentor/notifications/{id}', [MentorNotificationController::class, 'destroy']);
         Route::get('/mentor/review-requests', [MentorReviewRequestController::class, 'index']);
         Route::patch('/mentor/quests/{questId}/progress', [MentorQuestProgressController::class, 'update']);
         Route::get('/mentor/students/picker', [MentorStudentController::class, 'picker']);

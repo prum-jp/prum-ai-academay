@@ -73,11 +73,7 @@ final class QuestProgressStatus
 
     public static function mentorCanTransition(string $currentStatus, string $nextStatus): bool
     {
-        if ($currentStatus === $nextStatus || $currentStatus !== self::REVIEW_REQUESTED) {
-            return false;
-        }
-
-        return in_array($nextStatus, [self::COMPLETED, self::REJECTED], true);
+        return $currentStatus !== $nextStatus;
     }
 
     /**
@@ -85,9 +81,6 @@ final class QuestProgressStatus
      */
     public static function mentorSettableStatuses(): array
     {
-        return [
-            self::COMPLETED,
-            self::REJECTED,
-        ];
+        return self::ALL;
     }
 }

@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\StudentNotificationResource;
-use App\Models\StudentNotification;
+use App\Http\Resources\MentorNotificationResource;
+use App\Models\MentorNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class StudentNotificationController extends Controller
+class MentorNotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $notifications = StudentNotification::query()
+        $notifications = MentorNotification::query()
             ->where('user_id', $user->id)
             ->whereNull('read_at')
             ->orderByDesc('created_at')
@@ -22,30 +22,11 @@ class StudentNotificationController extends Controller
 
         return response()->json([
             'data' => $notifications
-                ->map(fn (StudentNotification $notification) => (new StudentNotificationResource($notification))->resolve())
+                ->map(fn (MentorNotification $notification) => (new MentorNotificationResource($notification))->resolve())
                 ->values(),
             'meta' => [
                 'total' => $notifications->count(),
             ],
-        ]);
-    }
-
-    public function markAsRead(Request $request, int $id): JsonResponse
-    {
-        /** @var \App\Models\User $user */
-        $user = $request->user();
-
-        $notification = StudentNotification::query()
-            ->where('user_id', $user->id)
-            ->whereNull('read_at')
-            ->whereKey($id)
-            ->firstOrFail();
-
-        $notification->read_at = now();
-        $notification->save();
-
-        return response()->json([
-            'data' => (new StudentNotificationResource($notification))->resolve(),
         ]);
     }
 
@@ -54,7 +35,7 @@ class StudentNotificationController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $notification = StudentNotification::query()
+        $notification = MentorNotification::query()
             ->where('user_id', $user->id)
             ->whereNull('read_at')
             ->whereKey($id)

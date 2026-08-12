@@ -48,25 +48,38 @@ export const formatQuestSkillLabel = (source: QuestMetaDisplaySource): string =>
 export const formatUnitSkillLabel = (skillGrants: SkillKey[]): string =>
     formatSkillGrants(skillGrants);
 
-export const formatQuestToolLabel = (source: QuestMetaDisplaySource): string => {
+export const collectQuestToolNames = (source: QuestMetaDisplaySource): string[] => {
     const toolNames = (source.tools ?? [])
         .map((tool) => tool.name?.trim())
         .filter((name): name is string => Boolean(name));
 
     if (toolNames.length > 0) {
-        return toolNames.join(' / ');
+        return toolNames;
     }
 
-    return source.tool?.name?.trim() || '—';
+    const single = source.tool?.name?.trim();
+    return single ? [single] : [];
+};
+
+export const formatQuestToolLabel = (source: QuestMetaDisplaySource): string => {
+    const toolNames = collectQuestToolNames(source);
+
+    if (toolNames.length === 0) {
+        return '—';
+    }
+
+    return toolNames.join('\n');
 };
 
 export const buildQuestMetaRows = (quest: QuestItem | QuestMetaDisplaySource): QuestSheetMetaRow[] => {
     const { metaLabels } = questSheetConfig;
+    const toolNames = collectQuestToolNames(quest);
 
     return [
         {
             label: metaLabels.recommendedTool,
-            value: formatQuestToolLabel(quest),
+            value: toolNames.length > 0 ? toolNames.join('\n') : '—',
+            lines: toolNames.length > 0 ? toolNames : undefined,
         },
         {
             label: metaLabels.difficulty,

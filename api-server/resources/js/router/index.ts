@@ -7,7 +7,7 @@ import StudentQuestDetailPage from '@/pages/student/StudentQuestDetailPage.vue';
 // import StudentSkillbookPage from '@/pages/student/StudentSkillbookPage.vue';
 import StudentDirectoryPage from '@/pages/student/StudentDirectoryPage.vue';
 import StudentDetailPage from '@/pages/student/StudentDetailPage.vue';
-import MentorNotificationsPage from '@/pages/mentor/MentorNotificationsPage.vue';
+import MentorReviewRequestsPage from '@/pages/mentor/MentorReviewRequestsPage.vue';
 import MentorQuestsPage from '@/pages/mentor-quest/MentorQuestsPage.vue';
 import MentorQuestMasterPage from '@/pages/mentor-master/MentorQuestMasterPage.vue';
 import MentorQuestDetailPage from '@/pages/mentor-master/MentorQuestDetailPage.vue';
@@ -75,9 +75,9 @@ const router = createRouter({
             redirect: { name: 'mentor-quests' },
         },
         {
-            path: '/mentor/notifications',
-            name: 'mentor-notifications',
-            component: MentorNotificationsPage,
+            path: '/mentor/review-requests',
+            name: 'mentor-review-requests',
+            component: MentorReviewRequestsPage,
             meta: { requiresAuth: true, roles: [ROLE_MENTOR] },
         },
         {

@@ -4,7 +4,7 @@
             type="button"
             class="student-notification-trigger"
             :aria-expanded="isOpen"
-            :aria-label="studentNotificationsConfig.ariaLabel"
+            :aria-label="mentorNotificationConfig.ariaLabel"
             @click="toggleMenu"
         >
             <i class="fa-solid fa-bell" aria-hidden="true"></i>
@@ -19,15 +19,15 @@
                 :style="panelStyle"
             >
                 <header class="student-notification-panel-header">
-                    {{ studentNotificationsConfig.title }}
+                    {{ mentorNotificationConfig.title }}
                 </header>
 
                 <p v-if="isLoading" class="student-notification-panel-empty">
-                    {{ studentNotificationsConfig.loading }}
+                    {{ mentorNotificationConfig.loading }}
                 </p>
                 <p v-else-if="error" class="student-notification-panel-error">{{ error }}</p>
                 <p v-else-if="items.length === 0" class="student-notification-panel-empty">
-                    {{ studentNotificationsConfig.empty }}
+                    {{ mentorNotificationConfig.empty }}
                 </p>
                 <ul
                     v-else
@@ -38,6 +38,7 @@
                         <button
                             type="button"
                             class="student-notification-item"
+                            :disabled="openingId === item.id"
                             @click="onSelect(item)"
                         >
                             <span class="student-notification-item-message">{{ item.message }}</span>
@@ -48,8 +49,8 @@
                         <button
                             type="button"
                             class="student-notification-delete"
-                            :aria-label="studentNotificationsConfig.deleteLabel"
-                            :disabled="deletingId === item.id"
+                            :aria-label="mentorNotificationConfig.deleteLabel"
+                            :disabled="deletingId === item.id || openingId === item.id"
                             @click="onDelete(item)"
                         >
                             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -65,18 +66,20 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import { useRouter } from 'vue-router';
-import { studentNotificationsConfig } from '@/constants/student/studentNotifications';
-import { useStudentNotifications } from '@/composables/student/useStudentNotifications';
-import type { StudentNotificationItem } from '@/types/student/studentNotification';
+import { selectMentorStudent } from '@/api/mentor/mentor';
+import { mentorNotificationConfig } from '@/constants/mentor/mentorNotification';
+import { useMentorNotifications } from '@/composables/mentor/useMentorNotifications';
+import type { MentorNotificationItem } from '@/types/mentor/mentorNotification';
 import { formatDateTime } from '@/utils/shared/formatDateTime';
 
 const router = useRouter();
-const { items, total, isLoading, error, refresh, removeNotification } = useStudentNotifications();
+const { items, total, isLoading, error, refresh, removeNotification } = useMentorNotifications();
 
 const rootRef = ref<HTMLElement | null>(null);
 const panelRef = ref<HTMLElement | null>(null);
 const isOpen = ref(false);
 const deletingId = ref<number | null>(null);
+const openingId = ref<number | null>(null);
 const panelStyle = ref<CSSProperties>({});
 
 const updatePanelPosition = (): void => {
@@ -114,23 +117,28 @@ const toggleMenu = (): void => {
     void openMenu();
 };
 
-const resolveRoute = (item: StudentNotificationItem): { name: string; params?: Record<string, string | number> } => {
-    if (item.questId !== null) {
-        return {
-            name: 'student-quest-detail',
-            params: { questId: item.questId },
-        };
+const onSelect = async (item: MentorNotificationItem): Promise<void> => {
+    if (item.studentId === null || item.questId === null || openingId.value !== null) {
+        return;
     }
 
-    return { name: 'student-quests' };
+    openingId.value = item.id;
+
+    try {
+        await selectMentorStudent(item.studentId);
+        closeMenu();
+        await router.push({
+            name: 'student-quest-detail',
+            params: { questId: item.questId },
+        });
+    } catch {
+        error.value = mentorNotificationConfig.openFailed;
+    } finally {
+        openingId.value = null;
+    }
 };
 
-const onSelect = async (item: StudentNotificationItem): Promise<void> => {
-    closeMenu();
-    await router.push(resolveRoute(item));
-};
-
-const onDelete = async (item: StudentNotificationItem): Promise<void> => {
+const onDelete = async (item: MentorNotificationItem): Promise<void> => {
     if (deletingId.value !== null) {
         return;
     }

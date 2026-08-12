@@ -1,26 +1,26 @@
 import { ref } from 'vue';
 import {
-    deleteStudentNotification,
-    fetchStudentNotifications,
-} from '@/api/student/studentNotifications';
-import { studentNotificationsConfig } from '@/constants/student/studentNotifications';
-import type { StudentNotificationItem } from '@/types/student/studentNotification';
+    deleteMentorNotification,
+    fetchMentorNotifications,
+} from '@/api/mentor/mentorNotification';
+import { mentorNotificationConfig } from '@/constants/mentor/mentorNotification';
+import type { MentorNotificationItem } from '@/types/mentor/mentorNotification';
 import { extractApiErrorMessage } from '@/utils/shared/extractApiErrorMessage';
 
-const items = ref<StudentNotificationItem[]>([]);
+const items = ref<MentorNotificationItem[]>([]);
 const total = ref(0);
 const isLoading = ref(false);
 const error = ref('');
 let requestId = 0;
 
-export function useStudentNotifications() {
+export function useMentorNotifications() {
     const refresh = async (): Promise<void> => {
         const currentRequestId = ++requestId;
         isLoading.value = true;
         error.value = '';
 
         try {
-            const response = await fetchStudentNotifications();
+            const response = await fetchMentorNotifications();
             if (currentRequestId !== requestId) {
                 return;
             }
@@ -35,7 +35,7 @@ export function useStudentNotifications() {
             error.value = extractApiErrorMessage(
                 caughtError,
                 undefined,
-                studentNotificationsConfig.loadFailed,
+                mentorNotificationConfig.loadFailed,
             );
             items.value = [];
             total.value = 0;
@@ -48,12 +48,12 @@ export function useStudentNotifications() {
 
     const removeNotification = async (notificationId: number): Promise<boolean> => {
         try {
-            await deleteStudentNotification(notificationId);
+            await deleteMentorNotification(notificationId);
             items.value = items.value.filter((item) => item.id !== notificationId);
             total.value = items.value.length;
             return true;
         } catch {
-            error.value = studentNotificationsConfig.deleteFailed;
+            error.value = mentorNotificationConfig.deleteFailed;
             return false;
         }
     };
