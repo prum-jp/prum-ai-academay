@@ -4,8 +4,8 @@ namespace App\Services\QuestImport;
 
 use App\Models\Quest;
 use App\Models\QuestUnit;
+use App\Services\PersonalQuestWriter;
 use App\Services\QuestSkillGrantSync;
-use App\Services\QuestToolSync;
 use App\Support\QuestDifficulty;
 use App\Support\QuestTier;
 use Illuminate\Support\Collection;
@@ -14,8 +14,8 @@ class QuestImportItemApplier
 {
     public function __construct(
         private readonly QuestImportToolResolver $toolResolver,
+        private readonly PersonalQuestWriter $personalQuestWriter,
         private readonly QuestSkillGrantSync $questSkillGrantSync,
-        private readonly QuestToolSync $questToolSync,
     ) {}
 
     /**
@@ -85,29 +85,16 @@ class QuestImportItemApplier
         $toolId = $toolIds[0] ?? null;
         $existingId = $item['existingId'] ?? null;
 
-        $difficulty = QuestDifficulty::normalize($item['difficulty'] ?? null);
-
-        $attributes = [
-            'title' => (string) $item['title'],
-            'description' => (string) ($item['description'] ?? ''),
-            'clear_condition' => (string) ($item['clearCondition'] ?? ''),
-            'difficulty' => $difficulty,
-            'experience_points' => QuestDifficulty::experiencePoints($difficulty),
-            'tool_id' => $toolId,
-            'sort_order' => $this->resolveSortOrder(
+        $attributes = $this->personalQuestWriter->buildImportAttributes(
+            $item,
+            $toolId,
+            $this->resolveSortOrder(
                 (int) ($item['sortOrder'] ?? 0),
                 $existingId !== null ? (int) Quest::query()->whereKey($existingId)->value('sort_order') : null,
                 fn (): int => ((int) $unit->quests()->max('sort_order')) + 1,
             ),
-            'is_published' => true,
-            'type' => Quest::TYPE_PERSONAL,
-            'quest_unit_id' => $unit->id,
-            'is_required' => (bool) ($item['isRequired'] ?? true),
-            'reward_text' => null,
-            'badge_label' => null,
-            'brand_label' => null,
-        ];
-        QuestTier::applyToAttributes($attributes, $item['questTier'] ?? QuestTier::LOW);
+            $unit->id,
+        );
 
         if ($existingId !== null) {
             $quest = Quest::query()->whereKey($existingId)->firstOrFail();
@@ -115,13 +102,11 @@ class QuestImportItemApplier
         } else {
             $quest = Quest::query()->create([
                 ...$attributes,
-                'starts_at' => now()->toDateString(),
-                'ends_at' => now()->addMonths(2)->toDateString(),
+                ...$this->personalQuestWriter->newImportDefaults(),
             ]);
         }
 
-        $this->questSkillGrantSync->syncForQuest($quest, $item['skillGrants'] ?? []);
-        $this->questToolSync->syncForQuest($quest, $toolIds);
+        $this->personalQuestWriter->syncRelations($quest, $item, $toolIds);
 
         return [
             'kind' => 'child_quest',

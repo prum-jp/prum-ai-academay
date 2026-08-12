@@ -6,6 +6,7 @@ use App\Http\Resources\QuestResource;
 use App\Models\Quest;
 use App\Models\StudentQuestProgress;
 use App\Models\User;
+use App\Support\PublicStorage;
 use App\Support\QuestProgressStatus;
 use App\Support\QuestSubmissionType;
 use App\Support\StudentLevelResolver;
@@ -134,7 +135,7 @@ class QuestProgressUpdateService
         $previousUrl = $progress->submission_url;
 
         DB::transaction(function () use ($actor, $student, $quest, $progress, $type, $url, $text, $file, $previousUrl): void {
-            $this->questSubmissionStorageService->deleteStoredUrl($previousUrl);
+            PublicStorage::deleteUrl($previousUrl);
 
             $storedUrl = null;
             $storedText = null;
@@ -146,7 +147,7 @@ class QuestProgressUpdateService
                 $storedUrl = null;
                 $storedText = trim((string) $text);
             } elseif (QuestSubmissionType::isFileType($type) && $file !== null) {
-                $storedUrl = $this->questSubmissionStorageService->store($student, $quest, $file, $type);
+                $storedUrl = $this->questSubmissionStorageService->store($student, $quest, $file);
                 $storedText = null;
             }
 

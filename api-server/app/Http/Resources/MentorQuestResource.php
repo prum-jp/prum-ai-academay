@@ -3,6 +3,8 @@
 namespace App\Http\Resources;
 
 use App\Models\Quest;
+use App\Support\MentorQuestFields;
+use App\Support\QuestRewardPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,28 +21,13 @@ class MentorQuestResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'description' => $this->description ?? '',
-            'type' => $this->type,
-            'isRequired' => (bool) $this->is_required,
-            'unlockLevel' => $this->unlock_level,
-            'rewardText' => $this->reward_text ?? '',
+            ...MentorQuestFields::base($this->resource),
             'rewards' => $this->whenLoaded('rewards', function () {
-                return $this->rewards->map(fn ($reward) => [
-                    'stat' => $reward->stat,
-                    'points' => (int) $reward->points,
-                ])->values();
+                return QuestRewardPresenter::statPoints($this->rewards);
             }, []),
-            'badgeLabel' => $this->badge_label,
-            'difficulty' => $this->difficulty,
-            'experiencePoints' => (int) ($this->experience_points ?? 0),
-            'clearCondition' => $this->clear_condition ?? '',
-            'sortOrder' => (int) $this->sort_order,
             'startsAt' => $this->starts_at?->toDateString(),
             'endsAt' => $this->ends_at?->toDateString(),
             'participantCount' => (int) ($this->applications_count ?? 0),
-            'isPublished' => (bool) $this->is_published,
         ];
     }
 }

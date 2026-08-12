@@ -3,9 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
-use App\Services\LevelCalculator;
-use App\Services\StudentExperienceService;
-use App\Support\PublicStorage;
+use App\Support\StudentLevelResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,8 +16,7 @@ class AdventurerProfileResource extends JsonResource
 
     public function __construct(
         User $resource,
-        private readonly LevelCalculator $levelCalculator,
-        private readonly StudentExperienceService $studentExperienceService,
+        private readonly StudentLevelResolver $studentLevelResolver,
     ) {
         parent::__construct($resource);
     }
@@ -38,16 +35,13 @@ class AdventurerProfileResource extends JsonResource
             'conceptualSkill' => (int) ($stat?->stat_conceptual_skill ?? 0),
         ];
 
-        $totalXp = $this->studentExperienceService->totalXp($this->resource);
-        $level = $this->levelCalculator->calculate($totalXp);
-
-        $avatarPath = $profile?->avatar_path;
+        $level = $this->studentLevelResolver->resolvePayload($this->resource);
 
         return [
             'name' => $this->name,
             'background' => $profile?->background ?? '',
             'hobby' => $profile?->hobby ?? '',
-            'avatarUrl' => $avatarPath ? PublicStorage::url($avatarPath) : null,
+            'avatarUrl' => $this->studentLevelResolver->resolveAvatarUrl($this->resource),
             'weaponSkill' => $profile?->weapon_skill ?? '',
             'spellGoal' => $profile?->spell_goal ?? '',
             'stats' => $stats,

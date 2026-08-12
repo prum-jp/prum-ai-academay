@@ -15,8 +15,28 @@ class StudentLevelResolver
 
     public function resolve(User $user): int
     {
+        return (int) $this->resolvePayload($user)['level'];
+    }
+
+    /**
+     * @return array{
+     *     level: int,
+     *     level_title: string,
+     *     total: int,
+     *     progress_percent: int,
+     *     xp_current_level_min: int,
+     *     xp_next_level_min: int|null
+     * }
+     */
+    public function resolvePayload(User $user): array
+    {
         $totalXp = $this->studentExperienceService->totalXp($user);
 
-        return (int) $this->levelCalculator->calculate($totalXp)['level'];
+        return $this->levelCalculator->calculate($totalXp);
+    }
+
+    public function resolveAvatarUrl(User $user): ?string
+    {
+        return PublicStorage::urlOrNull($user->studentProfile?->avatar_path);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\QuestUnit;
+use App\Support\MentorQuestUnitFields;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,17 +20,7 @@ class MentorQuestUnitResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'description' => $this->description ?? '',
-            'sortOrder' => (int) $this->sort_order,
-            'rewardText' => '',
-            'rewards' => $this->whenLoaded('rewards', function () {
-                return $this->rewards->map(fn ($reward) => [
-                    'stat' => $reward->stat,
-                    'points' => (int) $reward->points,
-                ])->values();
-            }, []),
+            ...MentorQuestUnitFields::base($this->resource),
             'questCount' => (int) ($this->quests_count ?? 0),
             'isPublished' => (bool) $this->is_published,
         ];

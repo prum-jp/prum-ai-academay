@@ -3,9 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
-use App\Services\LevelCalculator;
-use App\Services\StudentExperienceService;
-use App\Support\PublicStorage;
+use App\Support\StudentLevelResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,8 +16,7 @@ class StudentListItemResource extends JsonResource
 
     public function __construct(
         User $resource,
-        private readonly LevelCalculator $levelCalculator,
-        private readonly StudentExperienceService $studentExperienceService,
+        private readonly StudentLevelResolver $studentLevelResolver,
         private readonly ?int $selectedStudentId = null,
         private readonly bool $includeEmail = false,
     ) {
@@ -31,14 +28,12 @@ class StudentListItemResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $totalXp = $this->studentExperienceService->totalXp($this->resource);
-        $level = $this->levelCalculator->calculate($totalXp);
-        $avatarPath = $this->studentProfile?->avatar_path;
+        $level = $this->studentLevelResolver->resolvePayload($this->resource);
 
         $data = [
             'id' => $this->id,
             'name' => $this->name,
-            'avatarUrl' => $avatarPath ? PublicStorage::url($avatarPath) : null,
+            'avatarUrl' => $this->studentLevelResolver->resolveAvatarUrl($this->resource),
             'levelTitle' => $level['level_title'],
             // TODO: 後に機能追加 — 実績バッジ獲得数
             'earnedBadgeCount' => 0,

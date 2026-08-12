@@ -28,10 +28,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
-import { studentPages } from '@/constants/studentPages';
-import PageArrow from '@/components/rpg/PageArrow.vue';
-import PageIndicator from '@/components/rpg/PageIndicator.vue';
-import GameWindow from '@/components/rpg/GameWindow.vue';
+import { studentPages } from '@/constants/student/studentPages';
+import PageArrow from '@/components/rpg/shared/PageArrow.vue';
+import PageIndicator from '@/components/rpg/shared/PageIndicator.vue';
+import GameWindow from '@/components/rpg/shared/GameWindow.vue';
 
 const route = useRoute();
 const router = useRouter();

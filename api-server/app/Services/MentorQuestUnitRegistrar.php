@@ -4,14 +4,13 @@ namespace App\Services;
 
 use App\Models\Quest;
 use App\Models\QuestUnit;
-use App\Support\QuestTier;
+use App\Support\QuestToolIdResolver;
 use Illuminate\Support\Facades\DB;
 
 class MentorQuestUnitRegistrar
 {
     public function __construct(
-        private readonly QuestSkillGrantSync $questSkillGrantSync,
-        private readonly QuestToolSync $questToolSync,
+        private readonly PersonalQuestWriter $personalQuestWriter,
     ) {}
 
     /**
@@ -83,7 +82,7 @@ class MentorQuestUnitRegistrar
     }
 
     /**
-     * @param  list<array{id?: int|null, title: string, description?: string|null, clearCondition?: string|null, toolId?: int|null, sortOrder?: int|null, difficulty?: int|null, experiencePoints?: int|null, skillGrants?: list<string>, questTier?: string|null}>  $quests
+     * @param  list<array{id?: int|null, title: string, description?: string|null, clearCondition?: string|null, toolId?: int|null, toolIds?: list<int|null>, sortOrder?: int|null, difficulty?: int|null, experiencePoints?: int|null, skillGrants?: list<string>, questTier?: string|null}>  $quests
      */
     private function syncChildQuests(QuestUnit $unit, array $quests): void
     {
@@ -92,19 +91,8 @@ class MentorQuestUnitRegistrar
 
         foreach ($quests as $questData) {
             $index++;
-            $difficulty = \App\Support\QuestDifficulty::normalize($questData['difficulty'] ?? null);
-            $toolIds = $this->resolveToolIds($questData);
-            $attributes = [
-                'title' => $questData['title'],
-                'description' => $questData['description'] ?? '',
-                'clear_condition' => $questData['clearCondition'] ?? '',
-                'tool_id' => $toolIds[0] ?? null,
-                'difficulty' => $difficulty,
-                'experience_points' => \App\Support\QuestDifficulty::experiencePoints($difficulty),
-                'sort_order' => $questData['sortOrder'] ?? $index,
-                'is_published' => true,
-            ];
-            QuestTier::applyToAttributes($attributes, $questData['questTier'] ?? QuestTier::LOW);
+            $attributes = $this->personalQuestWriter->buildUnitChildAttributes($questData, $index);
+            $toolIds = QuestToolIdResolver::resolve($questData);
 
             $existing = isset($questData['id'])
                 ? $unit->quests()->whereKey($questData['id'])->first()
@@ -112,8 +100,7 @@ class MentorQuestUnitRegistrar
 
             if ($existing !== null) {
                 $existing->update($attributes);
-                $this->questSkillGrantSync->syncForQuest($existing, $questData['skillGrants'] ?? []);
-                $this->questToolSync->syncForQuest($existing, $toolIds);
+                $this->personalQuestWriter->syncRelations($existing, $questData, $toolIds);
                 $keptIds[] = $existing->id;
 
                 continue;
@@ -121,16 +108,9 @@ class MentorQuestUnitRegistrar
 
             $created = $unit->quests()->create([
                 ...$attributes,
-                'type' => Quest::TYPE_PERSONAL,
-                'is_required' => true,
-                'reward_text' => null,
-                'badge_label' => null,
-                'brand_label' => null,
-                'starts_at' => now()->toDateString(),
-                'ends_at' => now()->addMonths(2)->toDateString(),
+                ...$this->personalQuestWriter->newUnitChildDefaults(),
             ]);
-            $this->questSkillGrantSync->syncForQuest($created, $questData['skillGrants'] ?? []);
-            $this->questToolSync->syncForQuest($created, $toolIds);
+            $this->personalQuestWriter->syncRelations($created, $questData, $toolIds);
             $keptIds[] = $created->id;
         }
 
@@ -138,26 +118,5 @@ class MentorQuestUnitRegistrar
             ->whereNotIn('id', $keptIds)
             ->get()
             ->each(fn (Quest $quest) => $quest->delete());
-    }
-
-    /**
-     * @param  array{toolId?: int|null, toolIds?: list<int|null>}  $questData
-     * @return list<int>
-     */
-    private function resolveToolIds(array $questData): array
-    {
-        $toolIds = $questData['toolIds'] ?? [];
-        if ($toolIds !== []) {
-            return array_values(array_filter(
-                array_map(static fn ($id) => $id !== null ? (int) $id : null, $toolIds),
-                static fn ($id) => $id !== null && $id > 0,
-            ));
-        }
-
-        if (($questData['toolId'] ?? null) !== null) {
-            return [(int) $questData['toolId']];
-        }
-
-        return [];
     }
 }

@@ -25,10 +25,10 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
-import { mentorNotificationsConfig } from '@/constants/mentorNotifications';
-import { useAuth } from '@/composables/useAuth';
-import { useMentorReviewRequests } from '@/composables/useMentorReviewRequests';
-import StudentNotificationBell from '@/components/rpg/StudentNotificationBell.vue';
+import { mentorNotificationsConfig } from '@/constants/mentor/mentorNotifications';
+import { useAuth } from '@/composables/shared/useAuth';
+import { useMentorReviewRequests } from '@/composables/mentor/useMentorReviewRequests';
+import StudentNotificationBell from '@/components/rpg/student/StudentNotificationBell.vue';
 
 const router = useRouter();
 const { isAuthenticated, isMentor, isStudent, user, logout } = useAuth();

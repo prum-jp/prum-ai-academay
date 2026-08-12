@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\Quest;
 use App\Support\QuestProgressStatus;
+use App\Support\QuestRewardPresenter;
 use App\Support\QuestSkillGrantPresenter;
 use App\Support\QuestSubmissionPresenter;
 use App\Support\QuestTier;
@@ -57,10 +58,7 @@ class QuestResource extends JsonResource
             'rewardText' => $isChildQuest ? '' : ($this->reward_text ?? ''),
             'skillGrants' => QuestSkillGrantPresenter::fromQuest($this->resource),
             'rewards' => $this->whenLoaded('rewards', function () {
-                return $this->rewards->map(fn ($reward) => [
-                    'skill' => $reward->stat,
-                    'points' => 1,
-                ])->values();
+                return QuestRewardPresenter::skillPoints($this->rewards);
             }, []),
             'badgeLabel' => $this->badge_label,
             'brandLabel' => $this->brand_label,

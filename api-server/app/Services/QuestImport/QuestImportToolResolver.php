@@ -31,7 +31,7 @@ class QuestImportToolResolver
             return [];
         }
 
-        $segments = preg_split('/[,、/／|\n|・]+/u', $trimmed) ?: [];
+        $segments = preg_split('#[,、/／|・\n]+#u', $trimmed) ?: [];
         $names = [];
 
         foreach ($segments as $segment) {

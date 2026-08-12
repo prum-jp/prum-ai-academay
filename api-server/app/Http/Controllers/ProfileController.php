@@ -6,17 +6,15 @@ use App\Http\Requests\UpdateStudentProfileRequest;
 use App\Http\Requests\UploadStudentAvatarRequest;
 use App\Http\Resources\AdventurerProfileResource;
 use App\Models\User;
-use App\Services\LevelCalculator;
 use App\Services\StudentAvatarService;
-use App\Services\StudentExperienceService;
 use App\Support\AdventurerContext;
+use App\Support\StudentLevelResolver;
 use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
     public function __construct(
-        private readonly LevelCalculator $levelCalculator,
-        private readonly StudentExperienceService $studentExperienceService,
+        private readonly StudentLevelResolver $studentLevelResolver,
         private readonly StudentAvatarService $avatarService,
     ) {}
 
@@ -25,7 +23,7 @@ class ProfileController extends Controller
         $student = AdventurerContext::targetStudent($request)
             ->load(['studentProfile', 'studentStat']);
 
-        return new AdventurerProfileResource($student, $this->levelCalculator, $this->studentExperienceService);
+        return new AdventurerProfileResource($student, $this->studentLevelResolver);
     }
 
     public function update(UpdateStudentProfileRequest $request): AdventurerProfileResource
@@ -50,7 +48,7 @@ class ProfileController extends Controller
 
         $user->load(['studentProfile', 'studentStat']);
 
-        return new AdventurerProfileResource($user, $this->levelCalculator, $this->studentExperienceService);
+        return new AdventurerProfileResource($user, $this->studentLevelResolver);
     }
 
     public function uploadAvatar(UploadStudentAvatarRequest $request): AdventurerProfileResource
@@ -61,7 +59,7 @@ class ProfileController extends Controller
         $this->avatarService->store($user, $request->file('avatar'));
         $user->load(['studentProfile', 'studentStat']);
 
-        return new AdventurerProfileResource($user, $this->levelCalculator, $this->studentExperienceService);
+        return new AdventurerProfileResource($user, $this->studentLevelResolver);
     }
 
     public function deleteAvatar(Request $request): AdventurerProfileResource
@@ -72,6 +70,6 @@ class ProfileController extends Controller
         $this->avatarService->delete($user);
         $user->load(['studentProfile', 'studentStat']);
 
-        return new AdventurerProfileResource($user, $this->levelCalculator, $this->studentExperienceService);
+        return new AdventurerProfileResource($user, $this->studentLevelResolver);
     }
 }

@@ -6,20 +6,18 @@ use App\Http\Requests\SelectMentorStudentRequest;
 use App\Http\Requests\StoreMentorStudentRequest;
 use App\Http\Resources\StudentListItemResource;
 use App\Models\User;
-use App\Services\LevelCalculator;
 use App\Services\MentorStudentRegistrar;
 use App\Services\MentorStudentService;
-use App\Services\StudentExperienceService;
 use App\Support\AdventurerContext;
 use App\Support\PaginationMeta;
+use App\Support\StudentLevelResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MentorStudentController extends Controller
 {
     public function __construct(
-        private readonly LevelCalculator $levelCalculator,
-        private readonly StudentExperienceService $studentExperienceService,
+        private readonly StudentLevelResolver $studentLevelResolver,
         private readonly MentorStudentService $mentorStudentService,
         private readonly MentorStudentRegistrar $mentorStudentRegistrar,
     ) {}
@@ -37,8 +35,7 @@ class MentorStudentController extends Controller
             'data' => $paginator->getCollection()->map(
                 fn (User $student) => (new StudentListItemResource(
                     $student,
-                    $this->levelCalculator,
-                    $this->studentExperienceService,
+                    $this->studentLevelResolver,
                     $selectedId,
                     includeEmail: true,
                 ))->resolve(),
@@ -81,8 +78,7 @@ class MentorStudentController extends Controller
         return response()->json([
             'data' => (new StudentListItemResource(
                 $student,
-                $this->levelCalculator,
-                $this->studentExperienceService,
+                $this->studentLevelResolver,
                 null,
                 includeEmail: true,
             ))->resolve(),
@@ -98,8 +94,7 @@ class MentorStudentController extends Controller
         return response()->json([
             'data' => (new StudentListItemResource(
                 $student,
-                $this->levelCalculator,
-                $this->studentExperienceService,
+                $this->studentLevelResolver,
                 $student->id,
                 includeEmail: true,
             ))->resolve(),

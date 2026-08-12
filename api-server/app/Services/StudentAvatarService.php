@@ -10,7 +10,7 @@ class StudentAvatarService
 {
     public const MAX_KILOBYTES = 5120;
 
-    public function store(User $user, UploadedFile $file): string
+    public function store(User $user, UploadedFile $file): void
     {
         $profile = $user->studentProfile()->firstOrCreate(
             ['user_id' => $user->id],
@@ -33,8 +33,6 @@ class StudentAvatarService
         if ($previousPath && $previousPath !== $path) {
             PublicStorage::delete($previousPath);
         }
-
-        return $path;
     }
 
     public function delete(User $user): void

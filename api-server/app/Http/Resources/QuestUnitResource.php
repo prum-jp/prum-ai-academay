@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\QuestUnit;
+use App\Support\QuestRewardPresenter;
 use App\Support\QuestUnitProgressStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -39,10 +40,7 @@ class QuestUnitResource extends JsonResource
             'sortOrder' => (int) $this->sort_order,
             'rewardText' => '',
             'rewards' => $this->whenLoaded('rewards', function () {
-                return $this->rewards->map(fn ($reward) => [
-                    'stat' => $reward->stat,
-                    'points' => (int) $reward->points,
-                ])->values();
+                return QuestRewardPresenter::statPoints($this->rewards);
             }, []),
             'quests' => $quests,
             'completedCount' => $completedCount,

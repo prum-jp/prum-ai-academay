@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 class QuestSubmissionStorageService
 {
-    public function store(User $student, Quest $quest, UploadedFile $file, string $type): string
+    public function store(User $student, Quest $quest, UploadedFile $file): string
     {
         $extension = $file->guessExtension() ?: 'bin';
         $filename = Str::uuid()->toString().'.'.$extension;
@@ -19,15 +19,5 @@ class QuestSubmissionStorageService
         $path = $file->storeAs($directory, $filename, PublicStorage::diskName());
 
         return PublicStorage::url($path);
-    }
-
-    public function deleteStoredUrl(?string $url): void
-    {
-        $path = PublicStorage::resolvePathFromUrl($url);
-        if ($path === null) {
-            return;
-        }
-
-        PublicStorage::delete($path);
     }
 }

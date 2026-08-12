@@ -3,8 +3,8 @@
 namespace App\Http\Resources;
 
 use App\Models\QuestUnit;
-use App\Support\QuestSkillGrantPresenter;
-use App\Support\QuestTier;
+use App\Support\MentorChildQuestFields;
+use App\Support\MentorQuestUnitFields;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -21,40 +21,11 @@ class MentorQuestUnitDetailResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'description' => $this->description ?? '',
-            'sortOrder' => (int) $this->sort_order,
-            'rewardText' => '',
-            'rewards' => $this->whenLoaded('rewards', function () {
-                return $this->rewards->map(fn ($reward) => [
-                    'stat' => $reward->stat,
-                    'points' => (int) $reward->points,
-                ])->values();
-            }, []),
+            ...MentorQuestUnitFields::base($this->resource),
             'quests' => $this->whenLoaded('quests', function () {
-                return $this->quests->map(fn ($quest) => [
-                    'id' => $quest->id,
-                    'title' => $quest->title,
-                    'description' => $quest->description ?? '',
-                    'clearCondition' => $quest->clear_condition ?? '',
-                    'toolId' => $quest->tool_id,
-                    'toolIds' => $quest->relationLoaded('tools')
-                        ? $quest->tools->pluck('id')->values()->all()
-                        : [],
-                    'sortOrder' => (int) $quest->sort_order,
-                    'isPublished' => (bool) $quest->is_published,
-                    'difficulty' => $quest->difficulty,
-                    'estimatedDuration' => $quest->estimated_duration,
-                    'experiencePoints' => (int) ($quest->experience_points ?? 0),
-                    'questTier' => QuestTier::resolve(
-                        $quest->quest_tier,
-                        $quest->unlock_level !== null ? (int) $quest->unlock_level : null,
-                    ),
-                    'skillGrants' => $quest->relationLoaded('rewards')
-                        ? QuestSkillGrantPresenter::fromQuest($quest)
-                        : [],
-                ])->values();
+                return $this->quests
+                    ->map(fn ($quest) => MentorChildQuestFields::base($quest))
+                    ->values();
             }, []),
         ];
     }

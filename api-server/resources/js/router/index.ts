@@ -1,25 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import StudentLayout from '@/layouts/StudentLayout.vue';
-import StudentPage from '@/pages/StudentPage.vue';
-import StudentQuestsPage from '@/pages/StudentQuestsPage.vue';
-import StudentQuestDetailPage from '@/pages/StudentQuestDetailPage.vue';
+import StudentPage from '@/pages/student/StudentPage.vue';
+import StudentQuestsPage from '@/pages/student/StudentQuestsPage.vue';
+import StudentQuestDetailPage from '@/pages/student/StudentQuestDetailPage.vue';
 // TODO: 後に機能追加 — 実績バッジ（スキルブック）
-// import StudentSkillbookPage from '@/pages/StudentSkillbookPage.vue';
-import StudentDirectoryPage from '@/pages/StudentDirectoryPage.vue';
-import StudentDetailPage from '@/pages/StudentDetailPage.vue';
-import MentorNotificationsPage from '@/pages/MentorNotificationsPage.vue';
-import MentorQuestsPage from '@/pages/MentorQuestsPage.vue';
-import MentorQuestMasterPage from '@/pages/MentorQuestMasterPage.vue';
-import MentorQuestDetailPage from '@/pages/MentorQuestDetailPage.vue';
-import MentorQuestEditPage from '@/pages/MentorQuestEditPage.vue';
-import MentorQuestUnitDetailPage from '@/pages/MentorQuestUnitDetailPage.vue';
-import MentorQuestUnitEditPage from '@/pages/MentorQuestUnitEditPage.vue';
-import MentorQuestCreatePage from '@/pages/MentorQuestCreatePage.vue';
-import MentorToolsPage from '@/pages/MentorToolsPage.vue';
-import MentorStudentRegisterPage from '@/pages/MentorStudentRegisterPage.vue';
-import LoginPage from '@/pages/LoginPage.vue';
-import { useAuth } from '@/composables/useAuth';
-import { ROLE_MENTOR, ROLE_STUDENT } from '@/types/auth';
+// import StudentSkillbookPage from '@/pages/student/StudentSkillbookPage.vue';
+import StudentDirectoryPage from '@/pages/student/StudentDirectoryPage.vue';
+import StudentDetailPage from '@/pages/student/StudentDetailPage.vue';
+import MentorNotificationsPage from '@/pages/mentor/MentorNotificationsPage.vue';
+import MentorQuestsPage from '@/pages/mentor-quest/MentorQuestsPage.vue';
+import MentorQuestMasterPage from '@/pages/mentor-master/MentorQuestMasterPage.vue';
+import MentorQuestDetailPage from '@/pages/mentor-master/MentorQuestDetailPage.vue';
+import MentorQuestEditPage from '@/pages/mentor-master/MentorQuestEditPage.vue';
+import MentorQuestUnitDetailPage from '@/pages/mentor-master/MentorQuestUnitDetailPage.vue';
+import MentorQuestUnitEditPage from '@/pages/mentor-master/MentorQuestUnitEditPage.vue';
+import MentorQuestCreatePage from '@/pages/mentor-quest/MentorQuestCreatePage.vue';
+import MentorToolsPage from '@/pages/mentor-tools/MentorToolsPage.vue';
+import MentorStudentRegisterPage from '@/pages/mentor/MentorStudentRegisterPage.vue';
+import LoginPage from '@/pages/auth/LoginPage.vue';
+import { useAuth } from '@/composables/shared/useAuth';
+import { ROLE_MENTOR, ROLE_STUDENT } from '@/types/shared/auth';
 
 const router = createRouter({
     history: createWebHistory(),
