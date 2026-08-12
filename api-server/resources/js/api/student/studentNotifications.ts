@@ -1,8 +1,5 @@
 import axios from 'axios';
-import type {
-    StudentNotificationItem,
-    StudentNotificationListResponse,
-} from '@/types/student/studentNotification';
+import type { StudentNotificationListResponse } from '@/types/student/studentNotification';
 
 export const fetchStudentNotifications = async (): Promise<StudentNotificationListResponse> => {
     const { data } = await axios.get<StudentNotificationListResponse>('/api/notifications');
