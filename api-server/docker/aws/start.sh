@@ -1,6 +1,19 @@
 #!/bin/sh
 set -e
 
+prepare_runtime_permissions() {
+    mkdir -p \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/logs \
+        bootstrap/cache \
+        database
+
+    chown -R www-data:www-data storage bootstrap/cache database
+    chmod -R ug+rwx storage bootstrap/cache database
+}
+
 wait_for_mysql() {
     if [ "${DB_CONNECTION:-}" != "mysql" ]; then
         return 0
@@ -52,6 +65,8 @@ fi
 
 wait_for_mysql
 
+prepare_runtime_permissions
+
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
@@ -73,6 +88,10 @@ fi
 if [ "${FILESYSTEM_PUBLIC_DISK:-public}" = "public" ]; then
     php artisan storage:link 2>/dev/null || true
 fi
+
+prepare_runtime_permissions
+
+export TMPDIR="/var/www/html/storage/framework/cache/data"
 
 PORT="${PORT:-80}"
 export PORT
