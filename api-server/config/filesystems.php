@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Public Upload Disk
+    |--------------------------------------------------------------------------
+    |
+    | Avatars and quest submissions are stored on this disk.
+    | Use "public" for local storage, or "s3" for AWS Lightsail / production.
+    |
+    */
+
+    'public_disk' => env('FILESYSTEM_PUBLIC_DISK', 'public'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -56,6 +68,7 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'public',
             'throw' => false,
             'report' => false,
         ],

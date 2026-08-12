@@ -1,3 +1,4 @@
+# Render 用（検証環境）。本番は AWS Lightsail + MySQL + S3 を参照: docs/aws-lightsail-deploy.md
 services:
   - type: web
     name: prum-ai-academy

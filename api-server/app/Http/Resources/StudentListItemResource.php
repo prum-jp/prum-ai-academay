@@ -5,9 +5,9 @@ namespace App\Http\Resources;
 use App\Models\User;
 use App\Services\LevelCalculator;
 use App\Services\StudentExperienceService;
+use App\Support\PublicStorage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * @mixin User
@@ -38,7 +38,7 @@ class StudentListItemResource extends JsonResource
         $data = [
             'id' => $this->id,
             'name' => $this->name,
-            'avatarUrl' => $avatarPath ? Storage::disk('public')->url($avatarPath) : null,
+            'avatarUrl' => $avatarPath ? PublicStorage::url($avatarPath) : null,
             'levelTitle' => $level['level_title'],
             // TODO: 後に機能追加 — 実績バッジ獲得数
             'earnedBadgeCount' => 0,

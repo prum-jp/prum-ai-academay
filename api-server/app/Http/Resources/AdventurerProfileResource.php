@@ -5,9 +5,9 @@ namespace App\Http\Resources;
 use App\Models\User;
 use App\Services\LevelCalculator;
 use App\Services\StudentExperienceService;
+use App\Support\PublicStorage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * @mixin User
@@ -47,7 +47,7 @@ class AdventurerProfileResource extends JsonResource
             'name' => $this->name,
             'background' => $profile?->background ?? '',
             'hobby' => $profile?->hobby ?? '',
-            'avatarUrl' => $avatarPath ? Storage::disk('public')->url($avatarPath) : null,
+            'avatarUrl' => $avatarPath ? PublicStorage::url($avatarPath) : null,
             'weaponSkill' => $profile?->weapon_skill ?? '',
             'spellGoal' => $profile?->spell_goal ?? '',
             'stats' => $stats,

@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Support\PublicStorage;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 class StudentAvatarService
 {
@@ -23,14 +23,15 @@ class StudentAvatarService
         );
 
         $previousPath = $profile->avatar_path;
-        $path = $file->store('avatars/'.$user->id, 'public');
+        $disk = PublicStorage::diskName();
+        $path = $file->store('avatars/'.$user->id, $disk);
 
         $profile->update([
             'avatar_path' => $path,
         ]);
 
         if ($previousPath && $previousPath !== $path) {
-            Storage::disk('public')->delete($previousPath);
+            PublicStorage::delete($previousPath);
         }
 
         return $path;
@@ -44,7 +45,7 @@ class StudentAvatarService
             return;
         }
 
-        Storage::disk('public')->delete($profile->avatar_path);
+        PublicStorage::delete($profile->avatar_path);
         $profile->update([
             'avatar_path' => null,
         ]);

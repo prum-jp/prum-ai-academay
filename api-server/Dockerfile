@@ -32,8 +32,11 @@ RUN apt-get update \
         zip \
         bcmath \
         gd \
+        opcache \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /etc/nginx/sites-enabled/default
+
+COPY docker/aws/php-uploads.ini /usr/local/etc/php/conf.d/99-uploads.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -50,13 +53,13 @@ COPY . .
 
 COPY --from=frontend /app/public/build ./public/build
 
-COPY docker/render/nginx.conf /etc/nginx/conf.d/default.conf.template
+COPY docker/aws/nginx.conf /etc/nginx/conf.d/default.conf.template
 
 RUN composer dump-autoload --optimize \
-    && chmod +x docker/render/start.sh
+    && chmod +x docker/aws/start.sh docker/render/start.sh
 
-ENV PORT=10000
+ENV PORT=80
 
-EXPOSE 10000
+EXPOSE 80
 
-CMD ["docker/render/start.sh"]
+CMD ["docker/aws/start.sh"]

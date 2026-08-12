@@ -4,9 +4,8 @@ namespace App\Services;
 
 use App\Models\Quest;
 use App\Models\User;
-use App\Support\QuestSubmissionType;
+use App\Support\PublicStorage;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class QuestSubmissionStorageService
@@ -17,34 +16,18 @@ class QuestSubmissionStorageService
         $filename = Str::uuid()->toString().'.'.$extension;
         $directory = "quest-submissions/{$student->id}/{$quest->id}";
 
-        $path = $file->storeAs($directory, $filename, 'public');
+        $path = $file->storeAs($directory, $filename, PublicStorage::diskName());
 
-        return Storage::disk('public')->url($path);
+        return PublicStorage::url($path);
     }
 
     public function deleteStoredUrl(?string $url): void
     {
-        if ($url === null || $url === '') {
-            return;
-        }
-
-        $path = $this->resolvePublicDiskPath($url);
+        $path = PublicStorage::resolvePathFromUrl($url);
         if ($path === null) {
             return;
         }
 
-        Storage::disk('public')->delete($path);
-    }
-
-    private function resolvePublicDiskPath(string $url): ?string
-    {
-        $baseUrl = rtrim((string) Storage::disk('public')->url(''), '/');
-        if (! str_starts_with($url, $baseUrl.'/')) {
-            return null;
-        }
-
-        $relative = ltrim(substr($url, strlen($baseUrl)), '/');
-
-        return $relative !== '' ? $relative : null;
+        PublicStorage::delete($path);
     }
 }

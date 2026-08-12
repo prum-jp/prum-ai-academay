@@ -4,10 +4,10 @@ namespace App\Http\Resources;
 
 use App\Models\StudentQuestComment;
 use App\Support\QuestActivityType;
+use App\Support\PublicStorage;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * @mixin StudentQuestComment
@@ -33,7 +33,7 @@ class QuestCommentResource extends JsonResource
             'authorId' => $this->author_id,
             'authorName' => $author?->name ?? '',
             'authorRole' => $author?->role === User::ROLE_MENTOR ? 'mentor' : 'student',
-            'authorAvatarUrl' => $avatarPath ? Storage::disk('public')->url($avatarPath) : null,
+            'authorAvatarUrl' => $avatarPath ? PublicStorage::url($avatarPath) : null,
             'createdAt' => $this->created_at?->toIso8601String(),
             'isOwn' => $request->user()?->id === $this->author_id,
         ];
