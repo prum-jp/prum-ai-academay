@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\Quest;
+
 class ChildQuestAttributeBuilder
 {
     /**
@@ -35,6 +37,46 @@ class ChildQuestAttributeBuilder
         }
 
         QuestTier::applyToAttributes($attributes, $payload['questTier'] ?? QuestTier::LOW);
+
+        return $attributes;
+    }
+
+    /**
+     * @param  array{
+     *     title: string,
+     *     description?: string|null,
+     *     clearCondition?: string|null,
+     *     difficulty?: int|null,
+     *     estimatedDuration?: string|null,
+     *     questTier?: string|null
+     * }  $payload
+     * @return array<string, mixed>
+     */
+    public static function fromImportPayload(
+        array $payload,
+        ?Quest $existing = null,
+        ?string $defaultQuestTier = null,
+    ): array {
+        $existingDifficulty = $existing?->difficulty !== null ? (int) $existing->difficulty : null;
+        $difficulty = QuestImportFieldResolver::resolveDifficulty(
+            $payload['difficulty'] ?? null,
+            $existingDifficulty,
+        );
+
+        $attributes = [
+            'title' => $payload['title'],
+            'description' => $payload['description'] ?? '',
+            'clear_condition' => $payload['clearCondition'] ?? '',
+            'difficulty' => $difficulty,
+            'experience_points' => QuestDifficulty::experiencePoints($difficulty),
+        ];
+
+        $questTier = QuestImportFieldResolver::resolveQuestTier(
+            $payload['questTier'] ?? null,
+            $existing,
+            $defaultQuestTier,
+        );
+        QuestTier::applyToAttributes($attributes, $questTier);
 
         return $attributes;
     }

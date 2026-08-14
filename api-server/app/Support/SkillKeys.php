@@ -56,6 +56,12 @@ class SkillKeys
             }
         }
 
-        return array_values(array_unique($normalized));
+        $unique = array_values(array_unique($normalized));
+
+        usort($unique, fn (string $left, string $right): int => (
+            array_search($left, self::ALL, true) <=> array_search($right, self::ALL, true)
+        ));
+
+        return $unique;
     }
 }

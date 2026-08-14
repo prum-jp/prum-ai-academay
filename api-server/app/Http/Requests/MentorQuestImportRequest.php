@@ -21,6 +21,7 @@ class MentorQuestImportRequest extends FormRequest
     {
         return [
             'items' => ['required', 'array', 'min:1'],
+            'defaultQuestTier' => ['nullable', 'string', Rule::in(QuestTier::ALL)],
             'items.*.kind' => [
                 'required',
                 'string',

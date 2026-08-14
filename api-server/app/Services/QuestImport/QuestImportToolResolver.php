@@ -5,7 +5,6 @@ namespace App\Services\QuestImport;
 use App\Models\Tool;
 use App\Services\MentorToolRegistrar;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 
 class QuestImportToolResolver
 {
@@ -16,9 +15,15 @@ class QuestImportToolResolver
     /**
      * @return Collection<string, int>
      */
-    public function loadToolCodeMap(): Collection
+    public function loadToolNameMap(): Collection
     {
-        return Tool::query()->pluck('id', 'code');
+        $map = collect();
+
+        foreach (Tool::query()->get(['id', 'name']) as $tool) {
+            $this->putToolNameKeys($map, $tool->name, $tool->id);
+        }
+
+        return $map;
     }
 
     /**
@@ -53,15 +58,15 @@ class QuestImportToolResolver
     }
 
     /**
-     * @param  Collection<string, int>  $toolCodes
+     * @param  Collection<string, int>  $toolNameMap
      * @return list<int>
      */
-    public function resolveToolIds(string $toolRef, Collection $toolCodes): array
+    public function resolveToolIds(string $toolRef, Collection $toolNameMap): array
     {
         $ids = [];
 
         foreach ($this->splitToolNames($toolRef) as $name) {
-            $toolId = $this->resolveToolId($name, $toolCodes);
+            $toolId = $this->resolveToolId($name, $toolNameMap);
             if ($toolId !== null && ! in_array($toolId, $ids, true)) {
                 $ids[] = $toolId;
             }
@@ -71,58 +76,50 @@ class QuestImportToolResolver
     }
 
     /**
-     * @param  Collection<string, int>  $toolCodes
+     * @param  Collection<string, int>  $toolNameMap
      */
-    public function resolveFirstToolId(string $toolRef, Collection $toolCodes): ?int
+    public function resolveFirstToolId(string $toolRef, Collection $toolNameMap): ?int
     {
         $names = $this->splitToolNames($toolRef);
         if ($names === []) {
             return null;
         }
 
-        return $this->resolveToolId($names[0], $toolCodes);
+        return $this->resolveToolId($names[0], $toolNameMap);
     }
 
     /**
-     * @param  Collection<string, int>  $toolCodes
+     * @param  Collection<string, int>  $toolNameMap
      */
-    public function resolveToolId(string $toolRef, Collection $toolCodes): ?int
+    public function resolveToolId(string $toolRef, Collection $toolNameMap): ?int
     {
         $normalized = trim($toolRef);
         if ($normalized === '') {
             return null;
         }
 
-        if ($toolCodes->has($normalized)) {
-            return (int) $toolCodes->get($normalized);
+        if ($toolNameMap->has($normalized)) {
+            return (int) $toolNameMap->get($normalized);
         }
 
-        $lower = strtolower($normalized);
-        if ($toolCodes->has($lower)) {
-            return (int) $toolCodes->get($lower);
+        $lower = Tool::normalizeName($normalized);
+        if ($toolNameMap->has($lower)) {
+            return (int) $toolNameMap->get($lower);
         }
 
         $byName = Tool::query()
-            ->whereRaw('LOWER(name) = ?', [$lower])
+            ->whereRaw('LOWER(TRIM(name)) = ?', [$lower])
             ->value('id');
 
-        if ($byName !== null) {
-            return (int) $byName;
-        }
-
-        $byCode = Tool::query()
-            ->whereRaw('LOWER(code) = ?', [$lower])
-            ->value('id');
-
-        return $byCode !== null ? (int) $byCode : null;
+        return $byName !== null ? (int) $byName : null;
     }
 
     /**
      * @param  list<array<string, mixed>>  $items
-     * @param  Collection<string, int>  $toolCodes
+     * @param  Collection<string, int>  $toolNameMap
      * @return Collection<string, int>
      */
-    public function ensureToolsRegistered(array $items, Collection $toolCodes): Collection
+    public function ensureToolsRegistered(array $items, Collection $toolNameMap): Collection
     {
         $toolRefs = [];
 
@@ -138,43 +135,26 @@ class QuestImportToolResolver
         }
 
         foreach (array_values(array_unique($toolRefs)) as $toolRef) {
-            if ($this->resolveToolId($toolRef, $toolCodes) !== null) {
+            if ($this->resolveToolId($toolRef, $toolNameMap) !== null) {
                 continue;
             }
 
             $tool = $this->mentorToolRegistrar->register([
-                'code' => $this->generateUniqueToolCode($toolRef),
                 'name' => $toolRef,
             ]);
 
-            $toolCodes->put($tool->code, $tool->id);
-            $toolCodes->put(strtolower($tool->code), $tool->id);
-            $toolCodes->put($tool->name, $tool->id);
-            $toolCodes->put(strtolower($tool->name), $tool->id);
+            $this->putToolNameKeys($toolNameMap, $tool->name, $tool->id);
         }
 
-        return $toolCodes;
+        return $toolNameMap;
     }
 
-    private function generateUniqueToolCode(string $name): string
+    /**
+     * @param  Collection<string, int>  $toolNameMap
+     */
+    private function putToolNameKeys(Collection $toolNameMap, string $name, int $id): void
     {
-        $ascii = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $name) ?? '');
-        $base = trim($ascii, '-');
-
-        if ($base === '') {
-            $base = 'tool-'.substr(md5($name), 0, 8);
-        }
-
-        $base = Str::limit($base, 30, '');
-        $code = $base;
-        $suffix = 2;
-
-        while (Tool::query()->where('code', $code)->exists()) {
-            $suffixPart = (string) $suffix;
-            $code = Str::limit($base, max(1, 40 - strlen($suffixPart) - 1), '').'-'.$suffixPart;
-            $suffix++;
-        }
-
-        return $code;
+        $toolNameMap->put($name, $id);
+        $toolNameMap->put(Tool::normalizeName($name), $id);
     }
 }

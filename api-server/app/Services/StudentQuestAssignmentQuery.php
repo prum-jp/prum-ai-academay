@@ -3,7 +3,12 @@
 namespace App\Services;
 
 use App\Models\Quest;
+use App\Models\QuestApplication;
 use App\Models\QuestUnit;
+use App\Models\StudentCurriculumAssignment;
+use App\Models\StudentQuestAssignment;
+use App\Models\StudentQuestProgress;
+use App\Models\StudentQuestUnitAssignment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -122,6 +127,98 @@ class StudentQuestAssignmentQuery
     }
 
     /**
+     * ユニットに実際に割り当たっている受講生 ID（直接割当 + カリキュラム経由）。
+     *
+     * @return list<int>
+     */
+    public function linkedStudentIdsForUnit(int $unitId): array
+    {
+        $directIds = StudentQuestUnitAssignment::query()
+            ->where('quest_unit_id', $unitId)
+            ->whereHas('student', fn (Builder $query): Builder => $this->applyStudentRoleConstraint($query))
+            ->pluck('user_id');
+
+        $viaCurriculumIds = StudentCurriculumAssignment::query()
+            ->whereHas('student', fn (Builder $query): Builder => $this->applyStudentRoleConstraint($query))
+            ->whereHas('curriculum.questUnits', function (Builder $query) use ($unitId): void {
+                $query->where('quest_units.id', $unitId);
+            })
+            ->pluck('user_id');
+
+        $directChildQuestIds = StudentQuestAssignment::query()
+            ->whereHas('quest', function (Builder $query) use ($unitId): void {
+                $query
+                    ->where('type', Quest::TYPE_PERSONAL)
+                    ->where('quest_unit_id', $unitId);
+            })
+            ->whereHas('student', fn (Builder $query): Builder => $this->applyStudentRoleConstraint($query))
+            ->pluck('user_id');
+
+        return $this->normalizeStudentIds(
+            $directIds->merge($viaCurriculumIds)->merge($directChildQuestIds),
+        );
+    }
+
+    /**
+     * 子クエストに実際に割り当たっている受講生 ID（直接割当 + ユニット経由、除外を考慮）。
+     *
+     * @return list<int>
+     */
+    public function linkedStudentIdsForChildQuest(Quest $quest): array
+    {
+        if ($quest->type !== Quest::TYPE_PERSONAL || $quest->quest_unit_id === null) {
+            return [];
+        }
+
+        $unitId = (int) $quest->quest_unit_id;
+        $questId = (int) $quest->id;
+
+        $directIds = StudentQuestAssignment::query()
+            ->where('quest_id', $questId)
+            ->whereHas('student', fn (Builder $query): Builder => $this->applyStudentRoleConstraint($query))
+            ->pluck('user_id');
+
+        $viaUnitIds = User::query()
+            ->where('role', User::ROLE_STUDENT)
+            ->where(function (Builder $query) use ($unitId): void {
+                $query
+                    ->whereHas('questUnitAssignments', function (Builder $assignmentQuery) use ($unitId): void {
+                        $assignmentQuery->where('quest_unit_id', $unitId);
+                    })
+                    ->orWhereHas('curriculumAssignments.curriculum.questUnits', function (Builder $unitQuery) use ($unitId): void {
+                        $unitQuery->where('quest_units.id', $unitId);
+                    });
+            })
+            ->whereDoesntHave('questExclusions', function (Builder $exclusionQuery) use ($questId): void {
+                $exclusionQuery->where('quest_id', $questId);
+            })
+            ->pluck('id');
+
+        return $this->normalizeStudentIds($directIds->merge($viaUnitIds));
+    }
+
+    /**
+     * チーム / スペシャルクエストの参加受講生 ID（応募済み・承認済み + 進捗あり）。
+     *
+     * @return list<int>
+     */
+    public function linkedStudentIdsForBoardQuest(Quest $quest): array
+    {
+        $applicationIds = QuestApplication::query()
+            ->where('quest_id', $quest->id)
+            ->whereIn('status', [QuestApplication::STATUS_APPLIED, QuestApplication::STATUS_APPROVED])
+            ->whereHas('user', fn (Builder $query): Builder => $this->applyStudentRoleConstraint($query))
+            ->pluck('user_id');
+
+        $progressIds = StudentQuestProgress::query()
+            ->where('quest_id', $quest->id)
+            ->whereHas('user', fn (Builder $query): Builder => $this->applyStudentRoleConstraint($query))
+            ->pluck('user_id');
+
+        return $this->normalizeStudentIds($applicationIds->merge($progressIds));
+    }
+
+    /**
      * @return array{
      *     assigned: bool,
      *     directlyAssigned: bool,
@@ -175,5 +272,33 @@ class StudentQuestAssignmentQuery
         $query->whereHas('studentAssignments', function (Builder $assignmentQuery) use ($student): void {
             $assignmentQuery->where('user_id', $student->id);
         });
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    private function applyStudentRoleConstraint(Builder $query): Builder
+    {
+        return $query->where('role', User::ROLE_STUDENT);
+    }
+
+    /**
+     * @param  iterable<int|string|null>  $ids
+     * @return list<int>
+     */
+    private function normalizeStudentIds(iterable $ids): array
+    {
+        $normalized = [];
+
+        foreach ($ids as $id) {
+            if ($id === null || $id === '') {
+                continue;
+            }
+
+            $normalized[(int) $id] = (int) $id;
+        }
+
+        return array_values($normalized);
     }
 }

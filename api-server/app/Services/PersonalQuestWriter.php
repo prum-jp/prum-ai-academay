@@ -91,9 +91,15 @@ class PersonalQuestWriter
      * }  $item
      * @return array<string, mixed>
      */
-    public function buildImportAttributes(array $item, ?int $toolId, int $sortOrder, int $unitId): array
-    {
-        $attributes = ChildQuestAttributeBuilder::fromPayload($item);
+    public function buildImportAttributes(
+        array $item,
+        ?int $toolId,
+        int $sortOrder,
+        int $unitId,
+        ?Quest $existing = null,
+        ?string $defaultQuestTier = null,
+    ): array {
+        $attributes = ChildQuestAttributeBuilder::fromImportPayload($item, $existing, $defaultQuestTier);
         $attributes['tool_id'] = $toolId;
         $attributes['sort_order'] = $sortOrder;
         $attributes['is_published'] = true;

@@ -75,6 +75,29 @@ final class QuestTier
         return self::LOW;
     }
 
+    public static function isRecognized(mixed $value): bool
+    {
+        if ($value === null || $value === '') {
+            return false;
+        }
+
+        $normalized = mb_strtolower(trim((string) $value));
+
+        if (in_array($normalized, self::ALL, true)) {
+            return true;
+        }
+
+        foreach (self::ALIASES as $aliases) {
+            foreach ($aliases as $alias) {
+                if ($normalized === mb_strtolower($alias)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public static function unlockLevel(string $tier): ?int
     {
         return self::UNLOCK_LEVELS[$tier] ?? null;

@@ -7,7 +7,7 @@
             <button
                 type="button"
                 class="mentor-register-link"
-                @click="isCreateModalOpen = true"
+                @click="openCreateModal"
             >
                 <i class="fa-solid fa-plus" aria-hidden="true"></i>
                 {{ mentorToolBoardCardConfig.createButtonLabel }}
@@ -24,14 +24,20 @@
                 :loading-message="mentorToolMessages.loading"
                 :empty-message="mentorToolMessages.emptyList"
             >
-                <MentorToolCard v-for="tool in tools" :key="tool.id" :tool="tool" />
+                <MentorToolCard
+                    v-for="tool in tools"
+                    :key="tool.id"
+                    :tool="tool"
+                    @edit="openEditModal"
+                />
             </AsyncState>
         </div>
 
-        <MentorToolCreateModal
-            :open="isCreateModalOpen"
-            @close="closeCreateModal"
-            @created="handleCreated"
+        <MentorToolFormModal
+            :open="isFormModalOpen"
+            :tool="editingTool"
+            @close="closeFormModal"
+            @saved="handleSaved"
         />
     </RpgCard>
 </template>
@@ -43,7 +49,7 @@ import { mentorToolBoardCardConfig, mentorToolMessages } from '@/constants/mento
 import { useMentorToolCatalog } from '@/composables/mentor-tools/useMentorToolCatalog';
 import AsyncState from '@/components/rpg/shared/AsyncState.vue';
 import MentorToolCard from '@/components/rpg/mentor-tools/MentorToolCard.vue';
-import MentorToolCreateModal from '@/components/rpg/mentor-tools/MentorToolCreateModal.vue';
+import MentorToolFormModal from '@/components/rpg/mentor-tools/MentorToolFormModal.vue';
 import RpgCard from '@/components/rpg/shared/RpgCard.vue';
 
 const emit = defineEmits<{
@@ -51,15 +57,33 @@ const emit = defineEmits<{
 }>();
 
 const { tools, isLoading, error, loadTools } = useMentorToolCatalog();
-const isCreateModalOpen = ref(false);
+const isFormModalOpen = ref(false);
+const editingTool = ref<MentorTool | null>(null);
 
-const closeCreateModal = (): void => {
-    isCreateModalOpen.value = false;
+const openCreateModal = (): void => {
+    editingTool.value = null;
+    isFormModalOpen.value = true;
 };
 
-const handleCreated = async (tool: MentorTool): Promise<void> => {
-    closeCreateModal();
+const openEditModal = (tool: MentorTool): void => {
+    editingTool.value = tool;
+    isFormModalOpen.value = true;
+};
+
+const closeFormModal = (): void => {
+    isFormModalOpen.value = false;
+    editingTool.value = null;
+};
+
+const handleSaved = async (tool: MentorTool): Promise<void> => {
+    const wasEdit = editingTool.value != null;
+    closeFormModal();
     await loadTools();
-    emit('notify', `${tool.name} を追加しました！`);
+    emit(
+        'notify',
+        wasEdit
+            ? `${tool.name} を更新しました！`
+            : `${tool.name} を追加しました！`,
+    );
 };
 </script>

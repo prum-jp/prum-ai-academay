@@ -58,7 +58,6 @@
                     v-model:quest-tier="childQuestForm.questTier"
                     v-model:skill-grants="childQuestForm.skillGrants"
                     :quest-no="currentChildQuestNo"
-                    :section-title="mentorQuestCreatePageConfig.childQuestSectionTitle"
                     :tools="tools"
                     :disabled="isSubmitting"
                     editable-meta
@@ -123,12 +122,6 @@
                         />
                     </template>
 
-                    <template #quest-status>
-                        <span class="quest-sheet-create-type-badge">
-                            {{ createTypeLabel }}
-                        </span>
-                    </template>
-
                     <template #meta>
                         <QuestSheetCreateMetaFields
                             :form="questForm"
@@ -186,7 +179,6 @@ import { assignStudentQuestUnit } from '@/api/mentor-quest/questUnitAssignment';
 import {
     mentorChildQuestFormLabels,
     mentorQuestCreatePageConfig,
-    mentorQuestCreateTypeOptions,
     mentorQuestFormPlaceholders,
 } from '@/constants/mentor-quest/questAdmin';
 import { mentorAssignmentMessages } from '@/constants/mentor-quest/curriculum';
@@ -247,12 +239,6 @@ const {
     submit,
     resetForms,
 } = useMentorQuestCreate(resolveInitialType());
-
-const createTypeLabel = computed((): string => {
-    const option = mentorQuestCreateTypeOptions.find((item) => item.value === createType.value);
-
-    return option?.label ?? createType.value;
-});
 
 const childQuestListItems = computed(() =>
     childQuests.value.map((quest) => ({

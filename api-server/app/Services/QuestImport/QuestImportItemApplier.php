@@ -7,7 +7,7 @@ use App\Models\QuestUnit;
 use App\Services\PersonalQuestWriter;
 use App\Services\QuestSkillGrantSync;
 use App\Support\QuestDifficulty;
-use App\Support\QuestTier;
+use App\Support\QuestImportFieldResolver;
 use Illuminate\Support\Collection;
 
 class QuestImportItemApplier
@@ -23,7 +23,7 @@ class QuestImportItemApplier
      * @param  Collection<string, int>  $toolCodes
      * @return array<string, mixed>
      */
-    public function applyItem(array $item, Collection $toolCodes): array
+    public function applyItem(array $item, Collection $toolCodes, ?string $defaultQuestTier = null): array
     {
         if (($item['action'] ?? '') === 'unchanged') {
             return [
@@ -36,7 +36,7 @@ class QuestImportItemApplier
 
         return match ((string) $item['kind']) {
             'personal_unit' => $this->applyPersonalUnit($item),
-            'child_quest' => $this->applyChildQuest($item, $toolCodes),
+            'child_quest' => $this->applyChildQuest($item, $toolCodes, $defaultQuestTier),
             'team_quest', 'special_quest' => $this->applyBoardQuest($item),
             default => ['kind' => $item['kind'], 'status' => 'skipped'],
         };
@@ -77,28 +77,33 @@ class QuestImportItemApplier
      * @param  Collection<string, int>  $toolCodes
      * @return array<string, mixed>
      */
-    private function applyChildQuest(array $item, Collection $toolCodes): array
+    private function applyChildQuest(array $item, Collection $toolCodes, ?string $defaultQuestTier = null): array
     {
         $unit = QuestUnit::query()->where('title', (string) $item['unitTitle'])->firstOrFail();
         $toolRef = trim((string) ($item['toolCode'] ?? ''));
         $toolIds = $toolRef !== '' ? $this->toolResolver->resolveToolIds($toolRef, $toolCodes) : [];
         $toolId = $toolIds[0] ?? null;
         $existingId = $item['existingId'] ?? null;
+        $existingQuest = $existingId !== null
+            ? Quest::query()->whereKey($existingId)->firstOrFail()
+            : null;
 
         $attributes = $this->personalQuestWriter->buildImportAttributes(
             $item,
             $toolId,
             $this->resolveSortOrder(
                 (int) ($item['sortOrder'] ?? 0),
-                $existingId !== null ? (int) Quest::query()->whereKey($existingId)->value('sort_order') : null,
+                $existingQuest !== null ? (int) $existingQuest->sort_order : null,
                 fn (): int => ((int) $unit->quests()->max('sort_order')) + 1,
             ),
             $unit->id,
+            $existingQuest,
+            $defaultQuestTier,
         );
 
-        if ($existingId !== null) {
-            $quest = Quest::query()->whereKey($existingId)->firstOrFail();
-            $quest->update($attributes);
+        if ($existingQuest !== null) {
+            $existingQuest->update($attributes);
+            $quest = $existingQuest;
         } else {
             $quest = Quest::query()->create([
                 ...$attributes,
@@ -126,8 +131,16 @@ class QuestImportItemApplier
     {
         $type = $item['kind'] === 'team_quest' ? Quest::TYPE_TEAM : Quest::TYPE_SPECIAL;
         $existingId = $item['existingId'] ?? null;
-
-        $difficulty = QuestDifficulty::normalize($item['difficulty'] ?? null);
+        $existingQuest = $existingId !== null
+            ? Quest::query()->whereKey($existingId)->firstOrFail()
+            : null;
+        $existingDifficulty = $existingQuest?->difficulty !== null
+            ? (int) $existingQuest->difficulty
+            : null;
+        $difficulty = QuestImportFieldResolver::resolveDifficulty(
+            $item['difficulty'] ?? null,
+            $existingDifficulty,
+        );
 
         $attributes = [
             'description' => (string) ($item['description'] ?? ''),
@@ -142,7 +155,7 @@ class QuestImportItemApplier
             'experience_points' => QuestDifficulty::experiencePoints($difficulty),
             'sort_order' => $this->resolveSortOrder(
                 (int) ($item['sortOrder'] ?? 0),
-                $existingId !== null ? (int) Quest::query()->whereKey($existingId)->value('sort_order') : null,
+                $existingQuest !== null ? (int) $existingQuest->sort_order : null,
                 fn (): int => ((int) Quest::query()
                     ->where('type', $type)
                     ->whereNull('quest_unit_id')
@@ -154,9 +167,9 @@ class QuestImportItemApplier
             'brand_label' => null,
         ];
 
-        if ($existingId !== null) {
-            $quest = Quest::query()->whereKey($existingId)->firstOrFail();
-            $quest->update($attributes);
+        if ($existingQuest !== null) {
+            $existingQuest->update($attributes);
+            $quest = $existingQuest;
         } else {
             $quest = Quest::query()->create([
                 ...$attributes,

@@ -19,18 +19,41 @@ class MentorNotificationService
         }
 
         $preview = mb_strlen($body) > 80 ? mb_substr($body, 0, 80).'…' : $body;
+
+        $this->notifyAllMentors(MentorNotificationType::COMMENT, [
+            'studentId' => $student->id,
+            'studentName' => $student->name,
+            'questId' => $quest->id,
+            'questTitle' => $quest->title,
+            'commentPreview' => $preview,
+        ]);
+    }
+
+    public function notifyReviewRequested(User $student, Quest $quest): void
+    {
+        if (! $student->isStudent()) {
+            return;
+        }
+
+        $this->notifyAllMentors(MentorNotificationType::REVIEW_REQUESTED, [
+            'studentId' => $student->id,
+            'studentName' => $student->name,
+            'questId' => $quest->id,
+            'questTitle' => $quest->title,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function notifyAllMentors(string $type, array $metadata): void
+    {
         $mentorIds = User::query()
             ->where('role', User::ROLE_MENTOR)
             ->pluck('id');
 
         foreach ($mentorIds as $mentorId) {
-            $this->create((int) $mentorId, MentorNotificationType::COMMENT, [
-                'studentId' => $student->id,
-                'studentName' => $student->name,
-                'questId' => $quest->id,
-                'questTitle' => $quest->title,
-                'commentPreview' => $preview,
-            ]);
+            $this->create((int) $mentorId, $type, $metadata);
         }
     }
 

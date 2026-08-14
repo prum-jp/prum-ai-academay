@@ -111,6 +111,7 @@
                                 <MentorRowActionMenu
                                     :detail-to="mentorQuestMasterUnitDetailRoute(unit.id)"
                                     :edit-to="mentorQuestMasterUnitEditRoute(unit.id)"
+                                    @delete="onDeleteUnit(unit)"
                                 />
                             </div>
                         </header>
@@ -122,7 +123,11 @@
                             {{ mentorQuestMasterPageConfig.emptyUnitQuests }}
                         </div>
 
-                        <MentorQuestMasterQuestTable v-else :quests="unit.quests" />
+                        <MentorQuestMasterQuestTable
+                            v-else
+                            :quests="unit.quests"
+                            @delete="onDeleteQuest"
+                        />
                     </section>
 
                     <section
@@ -132,7 +137,7 @@
                         <header class="mentor-quest-master-unit-header">
                             <h3>{{ mentorQuestMasterSectionLabels.team }}</h3>
                         </header>
-                        <MentorQuestMasterQuestTable :quests="teamQuests" />
+                        <MentorQuestMasterQuestTable :quests="teamQuests" @delete="onDeleteQuest" />
                     </section>
 
                     <section
@@ -142,7 +147,7 @@
                         <header class="mentor-quest-master-unit-header">
                             <h3>{{ mentorQuestMasterSectionLabels.special }}</h3>
                         </header>
-                        <MentorQuestMasterQuestTable :quests="specialQuests" />
+                        <MentorQuestMasterQuestTable :quests="specialQuests" @delete="onDeleteQuest" />
                     </section>
                 </div>
             </AsyncState>
@@ -161,6 +166,17 @@
             @imported="onImported"
         />
 
+        <MentorQuestMasterDeleteModal
+            :open="isDeleteModalOpen"
+            :target="deleteTarget"
+            :impact="impact"
+            :is-loading-impact="isLoadingImpact"
+            :is-deleting="isDeleting"
+            :error-message="deleteErrorMessage"
+            @close="closeDeleteModal"
+            @confirm="onConfirmDelete"
+        />
+
         <ToastNotice :message="toastMessage" :show="showToast" />
     </MentorPanel>
 </template>
@@ -173,13 +189,20 @@ import {
     mentorQuestMasterMessages,
     mentorQuestMasterPageConfig,
     mentorQuestMasterSectionLabels,
+    mentorQuestMasterDeleteModalConfig,
 } from '@/constants/mentor-master/questMaster';
-import type { QuestMasterKindFilter } from '@/types/mentor-master/questMaster';
+import type {
+    QuestMasterKindFilter,
+    QuestMasterQuestRow,
+    QuestMasterUnitGroup,
+} from '@/types/mentor-master/questMaster';
 import { useMentorQuestMaster } from '@/composables/mentor-master/useMentorQuestMaster';
+import { useMentorQuestMasterDelete } from '@/composables/mentor-master/useMentorQuestMasterDelete';
 import { useToastNotice } from '@/composables/shared/useToastNotice';
 import AsyncState from '@/components/rpg/shared/AsyncState.vue';
 import MentorPanel from '@/components/rpg/mentor/MentorPanel.vue';
 import MentorQuestBulkImportModal from '@/components/rpg/mentor-quest/MentorQuestBulkImportModal.vue';
+import MentorQuestMasterDeleteModal from '@/components/rpg/mentor-master/MentorQuestMasterDeleteModal.vue';
 import MentorQuestMasterQuestTable from '@/components/rpg/mentor-master/MentorQuestMasterQuestTable.vue';
 import MentorRowActionMenu from '@/components/rpg/mentor-master/MentorRowActionMenu.vue';
 import QuestPagination from '@/components/rpg/shared/QuestPagination.vue';
@@ -192,6 +215,17 @@ import ToastNotice from '@/components/rpg/shared/ToastNotice.vue';
 
 const isBulkImportOpen = ref(false);
 const { showToast, toastMessage, showNotice } = useToastNotice();
+const {
+    deleteTarget,
+    isDeleteModalOpen,
+    impact,
+    isLoadingImpact,
+    isDeleting,
+    errorMessage: deleteErrorMessage,
+    openDeleteModal,
+    closeDeleteModal,
+    confirmDelete,
+} = useMentorQuestMasterDelete();
 
 const {
     units,
@@ -226,6 +260,32 @@ const onImported = async (): Promise<void> => {
     isBulkImportOpen.value = false;
     await load(meta.value?.currentPage ?? 1);
     showNotice(mentorQuestMasterMessages.imported);
+};
+
+const onDeleteUnit = (unit: QuestMasterUnitGroup): void => {
+    void openDeleteModal({
+        kind: 'personal_unit',
+        id: unit.id,
+        title: unit.title,
+    });
+};
+
+const onDeleteQuest = (quest: QuestMasterQuestRow): void => {
+    void openDeleteModal({
+        kind: quest.kind,
+        id: quest.id,
+        title: quest.title,
+    });
+};
+
+const onConfirmDelete = async (): Promise<void> => {
+    const success = await confirmDelete();
+    if (!success) {
+        return;
+    }
+
+    await load(meta.value?.currentPage ?? 1);
+    showNotice(mentorQuestMasterDeleteModalConfig.deleteSuccess);
 };
 
 onMounted(() => {

@@ -3,10 +3,6 @@
         class="mentor-quest-create-sheet-form"
         :class="{ 'mentor-quest-create-child-quest': childQuestStyle }"
     >
-        <h3 v-if="sectionTitle" class="mentor-quest-create-section-title">
-            {{ sectionTitle }}
-        </h3>
-
         <QuestSheetLayout :quest-no="questNo">
             <template #title>
                 <slot name="title">
@@ -18,12 +14,6 @@
                         :readonly="titleReadonly"
                         :required="titleRequired"
                     />
-                </slot>
-            </template>
-
-            <template #quest-status>
-                <slot name="quest-status">
-                    <span class="quest-sheet-create-type-badge">{{ statusLabel }}</span>
                 </slot>
             </template>
 
@@ -49,7 +39,6 @@
 </template>
 
 <script setup lang="ts">
-import { mentorPersonalAssignmentSectionConfig } from '@/constants/mentor-quest/questAdmin';
 import { createEmptySkillGrants, type SkillKey } from '@/constants/shared/skills';
 import { DEFAULT_QUEST_TIER, type QuestTier } from '@/constants/quest/questTier';
 import type { MentorTool } from '@/types/mentor-quest/questAdmin';
@@ -62,8 +51,6 @@ import QuestSheetPersonalTitleField from '@/components/rpg/quest-sheet/QuestShee
 withDefaults(
     defineProps<{
         questNo: number | null;
-        sectionTitle?: string;
-        statusLabel?: string;
         childQuestStyle?: boolean;
         editableMeta?: boolean;
         tools?: MentorTool[];
@@ -74,8 +61,6 @@ withDefaults(
         titleRequired?: boolean;
     }>(),
     {
-        sectionTitle: '',
-        statusLabel: mentorPersonalAssignmentSectionConfig.childQuestTypeLabel,
         childQuestStyle: true,
         editableMeta: false,
         tools: () => [],

@@ -7,17 +7,29 @@ use App\Models\Tool;
 class MentorToolRegistrar
 {
     /**
-     * @param  array{code: string, name: string, icon?: string|null}  $payload
+     * @param  array{name: string, icon?: string|null}  $payload
      */
     public function register(array $payload): Tool
     {
         $maxSortOrder = (int) Tool::query()->max('sort_order');
 
         return Tool::query()->create([
-            'code' => $payload['code'],
-            'name' => $payload['name'],
+            'name' => trim($payload['name']),
             'icon' => $payload['icon'] ?? null,
             'sort_order' => $maxSortOrder + 1,
         ]);
+    }
+
+    /**
+     * @param  array{name: string, icon?: string|null}  $payload
+     */
+    public function update(Tool $tool, array $payload): Tool
+    {
+        $tool->update([
+            'name' => trim($payload['name']),
+            'icon' => array_key_exists('icon', $payload) ? $payload['icon'] : $tool->icon,
+        ]);
+
+        return $tool->fresh();
     }
 }

@@ -33,4 +33,9 @@ final class QuestSubmissionPresenter
             'text' => $text,
         ];
     }
+
+    public static function hasSubmission(?StudentQuestProgress $progress): bool
+    {
+        return self::fromProgress($progress) !== null;
+    }
 }

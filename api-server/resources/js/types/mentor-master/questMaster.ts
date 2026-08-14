@@ -33,3 +33,21 @@ export type QuestMasterKindFilter =
     | 'child_quest'
     | 'team_quest'
     | 'special_quest';
+
+export type QuestMasterDeleteKind =
+    | 'personal_unit'
+    | 'child_quest'
+    | 'team_quest'
+    | 'special_quest';
+
+export interface QuestMasterDeleteTarget {
+    kind: QuestMasterDeleteKind;
+    id: number;
+    title: string;
+}
+
+export interface QuestDeletionImpact {
+    linkedUserCount: number;
+    hasSubmissions: boolean;
+    childQuestCount?: number;
+}

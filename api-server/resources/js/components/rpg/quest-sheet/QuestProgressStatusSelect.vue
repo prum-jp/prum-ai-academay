@@ -4,51 +4,51 @@
         class="quest-progress-select"
         :class="{ 'is-open': isOpen, 'is-disabled': disabled || isLocked }"
     >
-        <button
-            ref="triggerRef"
-            type="button"
-            class="quest-progress-badge quest-progress-select-trigger is-md"
-            :class="statusClass"
-            :disabled="disabled || isLocked || !canChange"
-            :aria-expanded="isOpen"
-            aria-haspopup="listbox"
-            @click="toggleMenu"
-        >
-            {{ currentLabel }}
-        </button>
-
-        <Teleport to="body">
-            <ul
-                v-if="isOpen && canChange"
-                ref="menuRef"
-                class="quest-progress-select-menu"
-                :style="menuStyle"
-                role="listbox"
+            <button
+                ref="triggerRef"
+                type="button"
+                class="quest-progress-badge quest-progress-select-trigger is-md"
+                :class="statusClass"
+                :disabled="disabled || isLocked || !canChange"
+                :aria-expanded="isOpen"
+                aria-haspopup="listbox"
+                @click="toggleMenu"
             >
-                <li v-for="option in options" :key="option.value" role="option">
-                    <button
-                        type="button"
-                        class="quest-progress-select-option"
-                        :class="[
-                            getQuestProgressStatusClass(option.value),
-                            {
-                                'is-current': option.value === status,
-                                'is-unavailable': !option.selectable,
-                            },
-                        ]"
-                        :disabled="
-                            isUpdating ||
-                            !option.selectable ||
-                            option.value === status
-                        "
-                        :aria-selected="option.value === status"
-                        @click="selectStatus(option.value)"
-                    >
-                        {{ option.label }}
-                    </button>
-                </li>
-            </ul>
-        </Teleport>
+                {{ currentLabel }}
+            </button>
+
+            <Teleport to="body">
+                <ul
+                    v-if="isOpen && canChange"
+                    ref="menuRef"
+                    class="quest-progress-select-menu"
+                    :style="menuStyle"
+                    role="listbox"
+                >
+                    <li v-for="option in options" :key="option.value" role="option">
+                        <button
+                            type="button"
+                            class="quest-progress-select-option"
+                            :class="[
+                                getQuestProgressStatusClass(option.value),
+                                {
+                                    'is-current': option.value === status,
+                                    'is-unavailable': !option.selectable,
+                                },
+                            ]"
+                            :disabled="
+                                isUpdating ||
+                                !option.selectable ||
+                                option.value === status
+                            "
+                            :aria-selected="option.value === status"
+                            @click="selectStatus(option.value)"
+                        >
+                            {{ option.label }}
+                        </button>
+                    </li>
+                </ul>
+            </Teleport>
     </div>
 </template>
 

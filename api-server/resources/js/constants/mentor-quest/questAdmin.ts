@@ -68,7 +68,6 @@ export const mentorQuestCreatePageConfig = {
     rewardsSectionTitle: '付与スキル',
     addChildQuestLabel: 'クエストを追加する',
     addedChildQuestsTitle: '追加済みクエスト',
-    childQuestSectionTitle: 'クエスト内容',
 } as const;
 
 export const mentorQuestUnitAssignModalConfig = {

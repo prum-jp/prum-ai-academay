@@ -251,7 +251,7 @@ class MentorQuestMasterService
             return null;
         }
 
-        return $tool->name !== '' ? $tool->name : $tool->code;
+        return $tool->name !== '' ? $tool->name : null;
     }
 
     private function shouldIncludeUnits(?string $kind): bool

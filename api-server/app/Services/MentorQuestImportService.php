@@ -22,13 +22,18 @@ class MentorQuestImportService
      * @param  list<array<string, mixed>>  $items
      * @return list<array<string, mixed>>
      */
-    public function preview(array $items): array
+    public function preview(array $items, ?string $defaultQuestTier = null): array
     {
         $items = $this->validator->injectBatchUnitTitles($items);
-        $toolCodes = $this->toolResolver->loadToolCodeMap();
+        $toolCodes = $this->toolResolver->loadToolNameMap();
 
-        return array_map(function (array $item) use ($toolCodes): array {
-            $preview = $this->enricher->enrichItem($item, toolCodes: $toolCodes);
+        return array_map(function (array $item) use ($toolCodes, $defaultQuestTier): array {
+            $preview = $this->enricher->enrichItem(
+                $item,
+                toolCodes: $toolCodes,
+                logUnchangedDiff: (bool) config('app.debug'),
+                defaultQuestTier: $defaultQuestTier,
+            );
             $preview['errors'] = $this->validator->validateItem($preview);
             unset($preview['_batchUnitTitles']);
 
@@ -40,14 +45,18 @@ class MentorQuestImportService
      * @param  list<array<string, mixed>>  $items
      * @return list<array<string, mixed>>
      */
-    public function apply(array $items): array
+    public function apply(array $items, ?string $defaultQuestTier = null): array
     {
         $items = $this->validator->injectBatchUnitTitles($items);
-        $toolCodes = $this->toolResolver->loadToolCodeMap();
+        $toolCodes = $this->toolResolver->loadToolNameMap();
         $batchUnitTitles = $this->validator->collectBatchUnitTitles($items);
 
-        $enrichedItems = array_map(function (array $item) use ($toolCodes): array {
-            $enriched = $this->enricher->enrichItem($item, toolCodes: $toolCodes);
+        $enrichedItems = array_map(function (array $item) use ($toolCodes, $defaultQuestTier): array {
+            $enriched = $this->enricher->enrichItem(
+                $item,
+                toolCodes: $toolCodes,
+                defaultQuestTier: $defaultQuestTier,
+            );
             unset($enriched['_batchUnitTitles']);
 
             return $enriched;
@@ -66,12 +75,12 @@ class MentorQuestImportService
             }
         }
 
-        return DB::transaction(function () use ($enrichedItems, $toolCodes): array {
+        return DB::transaction(function () use ($enrichedItems, $toolCodes, $defaultQuestTier): array {
             $toolCodes = $this->toolResolver->ensureToolsRegistered($enrichedItems, $toolCodes);
             $results = [];
 
             foreach ($enrichedItems as $item) {
-                $results[] = $this->applier->applyItem($item, $toolCodes);
+                $results[] = $this->applier->applyItem($item, $toolCodes, $defaultQuestTier);
             }
 
             return $results;

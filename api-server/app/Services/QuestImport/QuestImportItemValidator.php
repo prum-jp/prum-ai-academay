@@ -3,6 +3,7 @@
 namespace App\Services\QuestImport;
 
 use App\Models\QuestUnit;
+use App\Support\QuestTier;
 use App\Support\SkillKeys;
 
 class QuestImportItemValidator
@@ -75,6 +76,16 @@ class QuestImportItemValidator
             if (! in_array((string) $skill, SkillKeys::ALL, true)) {
                 $errors[] = "スキル「{$skill}」が不正です。";
             }
+        }
+
+        if (
+            in_array($kind, ['child_quest', 'team_quest', 'special_quest'], true)
+            && array_key_exists('questTier', $item)
+            && $item['questTier'] !== null
+            && $item['questTier'] !== ''
+            && ! QuestTier::isRecognized($item['questTier'])
+        ) {
+            $errors[] = 'クエストTier が不正です。';
         }
 
         return $errors;

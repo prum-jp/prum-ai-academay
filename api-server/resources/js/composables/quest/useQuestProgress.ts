@@ -25,8 +25,6 @@ export function useQuestProgress() {
 
         try {
             return await patchQuestProgress(quest.id, status, role);
-        } catch {
-            return null;
         } finally {
             isUpdating.value = false;
         }

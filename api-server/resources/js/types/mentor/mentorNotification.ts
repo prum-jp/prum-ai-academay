@@ -1,4 +1,4 @@
-export type MentorNotificationType = 'comment';
+export type MentorNotificationType = 'comment' | 'review_requested';
 
 export interface MentorNotificationItem {
     id: number;

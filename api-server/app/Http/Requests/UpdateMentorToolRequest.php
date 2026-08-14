@@ -2,10 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Tool;
 use App\Rules\UniqueToolName;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreMentorToolRequest extends FormRequest
+class UpdateMentorToolRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,12 +18,15 @@ class StoreMentorToolRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var Tool $tool */
+        $tool = $this->route('tool');
+
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                new UniqueToolName,
+                new UniqueToolName($tool->id),
             ],
             'icon' => ['nullable', 'string', 'max:80'],
         ];

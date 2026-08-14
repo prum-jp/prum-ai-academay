@@ -1,6 +1,6 @@
 import type { QuestImportItem } from '@/types/mentor-quest/questImport';
 import { parseQuestDifficulty } from '@/utils/quest/questDifficulty';
-import { DEFAULT_QUEST_TIER, parseQuestTier, type QuestTier } from '@/constants/quest/questTier';
+import { parseQuestTier, type QuestTier } from '@/constants/quest/questTier';
 import {
     buildCsvHeaderIndex,
     buildSkillColumnIndex,
@@ -63,8 +63,8 @@ interface ParsedCsvRow {
     completionCondition: string;
     isRequired: boolean;
     toolName: string;
-    difficulty: string;
-    questTier: string;
+    difficulty?: number;
+    questTier?: QuestTier;
     skillGrants: QuestImportItem['skillGrants'];
 }
 
@@ -161,11 +161,7 @@ const sortParsedRows = (left: ParsedCsvRow, right: ParsedCsvRow): number => {
  */
 export const parseQuestImportCsv = (
     text: string,
-    options?: {
-        defaultQuestTier?: QuestTier;
-    },
 ): { items: QuestImportItem[]; errors: string[] } => {
-    const defaultQuestTier = options?.defaultQuestTier ?? DEFAULT_QUEST_TIER;
     const rows = parseCsvText(text);
     const errors: string[] = [];
 
@@ -177,6 +173,8 @@ export const parseQuestImportCsv = (
     const headerIndex = buildCsvHeaderIndex(headerRow);
     const skillColumnIndex = buildSkillColumnIndex(headerRow);
     const mustColumnPresent = headerIndex.has('mustFlag');
+    const difficultyColumnPresent = headerIndex.has('difficulty');
+    const questTierColumnPresent = headerIndex.has('questTier');
 
     const missingColumns = REQUIRED_COLUMNS.filter((column) => !headerIndex.has(column));
     if (missingColumns.length > 0) {
@@ -247,6 +245,28 @@ export const parseQuestImportCsv = (
             return;
         }
 
+        const difficultyRaw = getCsvCell(cells, headerIndex, 'difficulty').trim();
+        let parsedDifficulty: number | undefined;
+        if (difficultyColumnPresent && difficultyRaw !== '') {
+            parsedDifficulty = parseQuestDifficulty(difficultyRaw);
+            if (parsedDifficulty === undefined) {
+                errors.push(
+                    `${lineNumber}行目: 難易度が不正です（値: "${difficultyRaw}"）。`,
+                );
+            }
+        }
+
+        const questTierRaw = getCsvCell(cells, headerIndex, 'questTier').trim();
+        let parsedQuestTier: QuestTier | undefined;
+        if (questTierColumnPresent && questTierRaw !== '') {
+            parsedQuestTier = parseQuestTier(questTierRaw);
+            if (parsedQuestTier === undefined) {
+                errors.push(
+                    `${lineNumber}行目: クエストTierが不正です（値: "${questTierRaw}"）。`,
+                );
+            }
+        }
+
         parsedRows.push({
             lineNumber,
             csvNo: csvNoRaw,
@@ -262,8 +282,8 @@ export const parseQuestImportCsv = (
             completionCondition,
             isRequired,
             toolName: pickFirstToolName(getCsvCell(cells, headerIndex, 'toolName')),
-            difficulty: getCsvCell(cells, headerIndex, 'difficulty').trim(),
-            questTier: getCsvCell(cells, headerIndex, 'questTier').trim(),
+            ...(parsedDifficulty !== undefined ? { difficulty: parsedDifficulty } : {}),
+            ...(parsedQuestTier !== undefined ? { questTier: parsedQuestTier } : {}),
             skillGrants: parseSkillGrantsFromCsvRow(cells, skillColumnIndex),
         });
 
@@ -298,8 +318,8 @@ export const parseQuestImportCsv = (
         isRequired: row.isRequired,
         toolCode: row.toolName || undefined,
         todoNote: row.todoNote || undefined,
-        difficulty: parseQuestDifficulty(row.difficulty),
-        questTier: parseQuestTier(row.questTier) ?? defaultQuestTier,
+        ...(row.difficulty !== undefined ? { difficulty: row.difficulty } : {}),
+        ...(row.questTier !== undefined ? { questTier: row.questTier } : {}),
         sortOrder: row.csvNoValue ?? row.questNo,
         skillGrants: row.skillGrants,
     }));

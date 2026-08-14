@@ -16,6 +16,9 @@ export const questProgressStatusLabels: Record<QuestProgressStatus, string> = {
     completed: '完了',
 };
 
+export const questProgressReviewRequiresSubmissionMessage =
+    '提出物を提出してからレビュー依頼してください。';
+
 export const getQuestProgressActions = (
     current: QuestProgressStatus,
 ): QuestProgressStatus[] => {

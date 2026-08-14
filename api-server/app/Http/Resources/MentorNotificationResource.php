@@ -44,6 +44,11 @@ class MentorNotificationResource extends JsonResource
                 $studentName,
                 $metadata['questTitle'] ?? '',
             ),
+            MentorNotificationType::REVIEW_REQUESTED => sprintf(
+                '%sがクエスト「%s」のレビューを依頼しました',
+                $studentName,
+                $metadata['questTitle'] ?? '',
+            ),
             default => '新しい通知があります',
         };
     }
