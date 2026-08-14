@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMentorToolRequest;
+use App\Http\Requests\UpdateMentorToolRequest;
 use App\Http\Resources\ToolResource;
 use App\Models\Tool;
 use App\Services\MentorToolRegistrar;
@@ -30,7 +31,6 @@ class MentorToolController extends Controller
     {
         $validated = $request->validated();
         $tool = $this->mentorToolRegistrar->register([
-            'code' => $validated['code'],
             'name' => $validated['name'],
             'icon' => $validated['icon'] ?? null,
         ]);
@@ -38,5 +38,23 @@ class MentorToolController extends Controller
         return response()->json([
             'data' => (new ToolResource($tool))->resolve(),
         ], 201);
+    }
+
+    public function update(UpdateMentorToolRequest $request, Tool $tool): JsonResponse
+    {
+        $validated = $request->validated();
+        $payload = [
+            'name' => $validated['name'],
+        ];
+
+        if (array_key_exists('icon', $validated)) {
+            $payload['icon'] = $validated['icon'];
+        }
+
+        $tool = $this->mentorToolRegistrar->update($tool, $payload);
+
+        return response()->json([
+            'data' => (new ToolResource($tool))->resolve(),
+        ]);
     }
 }

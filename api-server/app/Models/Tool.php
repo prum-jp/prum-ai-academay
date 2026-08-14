@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Tool extends Model
 {
     protected $fillable = [
-        'code',
         'name',
         'icon',
         'sort_order',
@@ -22,6 +21,11 @@ class Tool extends Model
         return [
             'sort_order' => 'integer',
         ];
+    }
+
+    public static function normalizeName(string $name): string
+    {
+        return strtolower(trim($name));
     }
 
     public function quests(): HasMany

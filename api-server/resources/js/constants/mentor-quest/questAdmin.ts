@@ -12,10 +12,11 @@ export const mentorPersonalAssignmentSectionConfig = {
     title: '個人クエスト',
     icon: 'fa-solid fa-seedling',
     description:
-        '受講生ごとに個人ユニットを割り当てます。行末の ⋮ からクエスト割当やクエスト一覧を開けます。',
+        '受講生ごとに個人ユニットを割り当てます。行末の ⋮ からクエスト割当・受講者シート・アカウント削除ができます。',
     menuLabel: 'メニューを開く',
     menuAssignLabel: 'クエスト割り当て',
     menuHomeLabel: '受講者シート',
+    menuDeleteLabel: 'アカウント削除',
     modalTitle: 'クエスト割当',
     modalDescription:
         'ユニットをクリックで含まれるクエストを表示できます。バッジをクリックで割当・解除できます。',
@@ -36,6 +37,23 @@ export const mentorPersonalAssignmentSectionConfig = {
     viaCurriculumNote: 'カリキュラム経由',
     dragHandleLabel: 'ユニットの並び替え',
     reorderFailed: 'ユニットの並び順更新に失敗しました。',
+} as const;
+
+export const mentorStudentDeleteModalConfig = {
+    title: '受講生アカウント削除',
+    icon: 'fa-solid fa-user-xmark',
+    confirmLabel: '削除する',
+    deletingLabel: '削除中...',
+    cancelLabel: 'キャンセル',
+    deleteFailed: 'アカウントの削除に失敗しました。',
+    deleteSuccess: '受講生アカウントを削除しました。',
+} as const;
+
+export const mentorStudentDeleteMessages = {
+    confirm: (name: string): string =>
+        `「${name}」のアカウントを削除しますか？`,
+    warning:
+        '進捗・クエスト割当・提出データなど、この受講生に紐づくデータはすべて削除されます。この操作は取り消せません。',
 } as const;
 
 export const mentorQuestBoardCardConfig = {
@@ -68,7 +86,6 @@ export const mentorQuestCreatePageConfig = {
     rewardsSectionTitle: '付与スキル',
     addChildQuestLabel: 'クエストを追加する',
     addedChildQuestsTitle: '追加済みクエスト',
-    childQuestSectionTitle: 'クエスト内容',
 } as const;
 
 export const mentorQuestUnitAssignModalConfig = {

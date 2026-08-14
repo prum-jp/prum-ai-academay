@@ -11,13 +11,11 @@ class ToolSeeder extends Seeder
     {
         $tools = [
             [
-                'code' => 'gemini',
                 'name' => 'Gemini',
                 'icon' => 'fa-solid fa-wand-magic-sparkles',
                 'sort_order' => 1,
             ],
             [
-                'code' => 'notebooklm',
                 'name' => 'NotebookLM',
                 'icon' => 'fa-solid fa-book-open',
                 'sort_order' => 2,
@@ -26,7 +24,7 @@ class ToolSeeder extends Seeder
 
         foreach ($tools as $tool) {
             Tool::query()->updateOrCreate(
-                ['code' => $tool['code']],
+                ['name' => $tool['name']],
                 $tool,
             );
         }

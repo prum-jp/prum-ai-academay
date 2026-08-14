@@ -17,7 +17,7 @@
             <ul
                 v-if="isMenuOpen"
                 ref="menuRef"
-                class="mentor-quest-unit-menu"
+                class="mentor-quest-unit-menu mentor-quest-unit-menu--master"
                 :style="menuStyle"
             >
                 <li>
@@ -38,6 +38,15 @@
                         {{ mentorQuestMasterMenuConfig.editLabel }}
                     </RouterLink>
                 </li>
+                <li>
+                    <button
+                        type="button"
+                        class="mentor-quest-unit-menu-item is-danger"
+                        @click="onDelete"
+                    >
+                        {{ mentorQuestMasterMenuConfig.deleteLabel }}
+                    </button>
+                </li>
             </ul>
         </Teleport>
     </div>
@@ -48,6 +57,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import { RouterLink, type RouteLocationRaw } from 'vue-router';
 import { mentorQuestMasterMenuConfig } from '@/constants/mentor-master/questMaster';
+import { useExclusiveRowMenuState } from '@/composables/shared/useExclusiveRowMenuState';
 
 defineProps<{
     detailTo: RouteLocationRaw;
@@ -55,15 +65,15 @@ defineProps<{
     disabled?: boolean;
 }>();
 
+const emit = defineEmits<{
+    delete: [];
+}>();
+
 const wrapRef = ref<HTMLElement | null>(null);
 const triggerRef = ref<HTMLButtonElement | null>(null);
 const menuRef = ref<HTMLElement | null>(null);
-const isMenuOpen = ref(false);
 const menuStyle = ref<CSSProperties>({});
-
-const closeMenu = (): void => {
-    isMenuOpen.value = false;
-};
+const { isMenuOpen, openMenu: markMenuOpen, closeMenu } = useExclusiveRowMenuState();
 
 const updateMenuPosition = (): void => {
     const trigger = triggerRef.value;
@@ -72,7 +82,7 @@ const updateMenuPosition = (): void => {
     }
 
     const rect = trigger.getBoundingClientRect();
-    const menuHeight = menuRef.value?.offsetHeight ?? 88;
+    const menuHeight = menuRef.value?.offsetHeight ?? 132;
     const gap = 6;
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUpward = spaceBelow < menuHeight + gap && rect.top > menuHeight + gap;
@@ -82,13 +92,12 @@ const updateMenuPosition = (): void => {
         top: openUpward ? `${rect.top - menuHeight - gap}px` : `${rect.bottom + gap}px`,
         left: `${rect.right}px`,
         transform: 'translateX(-100%)',
-        minWidth: '168px',
         zIndex: 1200,
     };
 };
 
 const openMenu = async (): Promise<void> => {
-    isMenuOpen.value = true;
+    markMenuOpen();
     await nextTick();
     updateMenuPosition();
     await nextTick();
@@ -102,6 +111,11 @@ const toggleMenu = (): void => {
     }
 
     void openMenu();
+};
+
+const onDelete = (): void => {
+    closeMenu();
+    emit('delete');
 };
 
 const onDocumentClick = (event: MouseEvent): void => {
@@ -140,6 +154,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+    closeMenu();
     document.removeEventListener('click', onDocumentClick);
     document.removeEventListener('keydown', onDocumentKeydown);
     window.removeEventListener('resize', onViewportChange);

@@ -12,6 +12,7 @@ use App\Http\Controllers\MentorQuestUnitController;
 use App\Http\Controllers\MentorStudentQuestUnitAssignmentController;
 use App\Http\Controllers\MentorStudentAssignmentController;
 use App\Http\Controllers\MentorQuestProgressController;
+use App\Http\Controllers\MentorNotificationController;
 use App\Http\Controllers\MentorReviewRequestController;
 use App\Http\Controllers\MentorStudentController;
 use App\Http\Controllers\MentorToolController;
@@ -48,6 +49,7 @@ Route::prefix('api')->group(function (): void {
     Route::middleware(['auth', 'student'])->group(function (): void {
         Route::get('/notifications', [StudentNotificationController::class, 'index']);
         Route::patch('/notifications/{id}/read', [StudentNotificationController::class, 'markAsRead']);
+        Route::delete('/notifications/{id}', [StudentNotificationController::class, 'destroy']);
         Route::patch('/profile', [ProfileController::class, 'update']);
         Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
         Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
@@ -55,10 +57,13 @@ Route::prefix('api')->group(function (): void {
 
     Route::middleware(['auth', 'mentor'])->group(function (): void {
         Route::get('/mentor/students', [MentorStudentController::class, 'index']);
+        Route::get('/mentor/notifications', [MentorNotificationController::class, 'index']);
+        Route::delete('/mentor/notifications/{id}', [MentorNotificationController::class, 'destroy']);
         Route::get('/mentor/review-requests', [MentorReviewRequestController::class, 'index']);
         Route::patch('/mentor/quests/{questId}/progress', [MentorQuestProgressController::class, 'update']);
         Route::get('/mentor/students/picker', [MentorStudentController::class, 'picker']);
         Route::post('/mentor/students', [MentorStudentController::class, 'store']);
+        Route::delete('/mentor/students/{studentId}', [MentorStudentController::class, 'destroy']);
         Route::put('/mentor/target-student', [MentorStudentController::class, 'select']);
         Route::get('/mentor/students/{studentId}/quest-units', [MentorStudentQuestUnitAssignmentController::class, 'index']);
         Route::post('/mentor/students/{studentId}/quest-units/{questUnit}/assign', [MentorStudentQuestUnitAssignmentController::class, 'store']);
@@ -75,17 +80,20 @@ Route::prefix('api')->group(function (): void {
         Route::post('/mentor/curricula/{curriculum}/assign-all-students', [MentorCurriculumController::class, 'assignAllStudents']);
         Route::get('/mentor/tools', [MentorToolController::class, 'index']);
         Route::post('/mentor/tools', [MentorToolController::class, 'store']);
+        Route::put('/mentor/tools/{tool}', [MentorToolController::class, 'update']);
         Route::get('/mentor/quest-units', [MentorQuestUnitController::class, 'index']);
         Route::put('/mentor/quest-units/reorder', [MentorQuestUnitController::class, 'reorder']);
         Route::post('/mentor/quest-units', [MentorQuestUnitController::class, 'store']);
         Route::get('/mentor/quest-units/{questUnit}', [MentorQuestUnitController::class, 'show']);
         Route::put('/mentor/quest-units/{questUnit}', [MentorQuestUnitController::class, 'update']);
         Route::post('/mentor/quest-units/{questUnit}/assign-all-students', [MentorQuestUnitAssignmentController::class, 'assignAllStudents']);
+        Route::get('/mentor/quest-units/{questUnit}/deletion-impact', [MentorQuestUnitController::class, 'deletionImpact']);
         Route::delete('/mentor/quest-units/{questUnit}', [MentorQuestUnitController::class, 'destroy']);
         Route::get('/mentor/quests/master', [MentorQuestMasterController::class, 'index']);
         Route::get('/mentor/quests/master/export', [MentorQuestMasterController::class, 'export']);
         Route::get('/mentor/quests', [MentorQuestController::class, 'index']);
         Route::post('/mentor/quests', [MentorQuestController::class, 'store']);
+        Route::get('/mentor/quests/{quest}/deletion-impact', [MentorQuestController::class, 'deletionImpact']);
         Route::get('/mentor/quests/{quest}', [MentorQuestController::class, 'show']);
         Route::put('/mentor/quests/{quest}', [MentorQuestController::class, 'update']);
         Route::put('/mentor/quests/{quest}/personal', [MentorQuestController::class, 'updatePersonal']);

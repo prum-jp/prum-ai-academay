@@ -10,6 +10,7 @@ use App\Http\Resources\MentorQuestResource;
 use App\Models\Quest;
 use App\Services\MentorQuestCatalogService;
 use App\Services\MentorQuestRegistrar;
+use App\Services\QuestDeletionImpactService;
 use App\Support\PaginationMeta;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class MentorQuestController extends Controller
     public function __construct(
         private readonly MentorQuestCatalogService $mentorQuestCatalogService,
         private readonly MentorQuestRegistrar $mentorQuestRegistrar,
+        private readonly QuestDeletionImpactService $questDeletionImpactService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -110,8 +112,21 @@ class MentorQuestController extends Controller
         ]);
     }
 
+    public function deletionImpact(Quest $quest): JsonResponse
+    {
+        return response()->json([
+            'data' => $this->questDeletionImpactService->forQuest($quest),
+        ]);
+    }
+
     public function destroy(Quest $quest): JsonResponse
     {
+        if ($quest->type === Quest::TYPE_PERSONAL && $quest->quest_unit_id !== null) {
+            $this->mentorQuestRegistrar->delete($quest);
+
+            return response()->json(status: 204);
+        }
+
         $this->ensureBoardQuest($quest);
 
         $this->mentorQuestRegistrar->delete($quest);

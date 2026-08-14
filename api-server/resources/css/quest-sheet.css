@@ -162,6 +162,14 @@
     overflow-wrap: anywhere;
 }
 
+.quest-sheet-meta-line {
+    margin: 0;
+}
+
+.quest-sheet-meta-line + .quest-sheet-meta-line {
+    margin-top: 4px;
+}
+
 .quest-sheet-sections {
     display: grid;
     gap: 14px;

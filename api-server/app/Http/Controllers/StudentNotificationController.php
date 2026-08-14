@@ -48,4 +48,22 @@ class StudentNotificationController extends Controller
             'data' => (new StudentNotificationResource($notification))->resolve(),
         ]);
     }
+
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $notification = StudentNotification::query()
+            ->where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->whereKey($id)
+            ->firstOrFail();
+
+        $notification->delete();
+
+        return response()->json([
+            'message' => '通知を削除しました。',
+        ]);
+    }
 }

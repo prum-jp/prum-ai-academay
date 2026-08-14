@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { QuestTier } from '@/constants/quest/questTier';
 import type {
     QuestImportApplyResponse,
     QuestImportPreviewResponse,
@@ -7,10 +8,11 @@ import type {
 
 export const previewQuestImport = async (
     items: QuestImportPayloadItem[],
+    defaultQuestTier?: QuestTier,
 ): Promise<QuestImportPreviewResponse> => {
     const { data } = await axios.post<QuestImportPreviewResponse>(
         '/api/mentor/quests/import/preview',
-        { items },
+        { items, defaultQuestTier },
     );
 
     return data;
@@ -18,10 +20,11 @@ export const previewQuestImport = async (
 
 export const applyQuestImport = async (
     items: QuestImportPayloadItem[],
+    defaultQuestTier?: QuestTier,
 ): Promise<QuestImportApplyResponse> => {
     const { data } = await axios.post<QuestImportApplyResponse>(
         '/api/mentor/quests/import/apply',
-        { items },
+        { items, defaultQuestTier },
     );
 
     return data;

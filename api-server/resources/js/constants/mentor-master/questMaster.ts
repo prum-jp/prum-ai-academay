@@ -26,6 +26,29 @@ export const mentorQuestMasterMenuConfig = {
     menuLabel: 'メニューを開く',
     detailLabel: '詳細',
     editLabel: '編集',
+    deleteLabel: '削除',
+} as const;
+
+export const mentorQuestMasterDeleteModalConfig = {
+    title: '削除の確認',
+    icon: 'fa-solid fa-trash',
+    cancelLabel: 'キャンセル',
+    confirmLabel: '削除する',
+    deletingLabel: '削除中...',
+    loadingLabel: '確認中...',
+    loadFailed: '削除前の確認情報を取得できませんでした。',
+    deleteFailed: '削除に失敗しました。',
+    deleteSuccess: '削除しました。',
+} as const;
+
+export const mentorQuestMasterDeleteMessages = {
+    unitConfirm: (title: string): string =>
+        `「${title}」と、このユニットに紐づく子クエストを削除します。よろしいですか？`,
+    questConfirm: (title: string): string => `「${title}」を削除します。よろしいですか？`,
+    linkedUsersWarning: (count: number): string =>
+        `${count}人の受講生に紐づいています。進捗・割当・提出データも削除されます。`,
+    submissionsWarning: '提出済みのデータがあります。削除すると復元できません。',
+    unitChildQuestCount: (count: number): string => `子クエスト ${count}件も削除されます。`,
 } as const;
 
 export const mentorQuestMasterDetailPageConfig = {
@@ -44,7 +67,6 @@ export const mentorQuestMasterEditPageConfig = {
     loadFailed: '編集データの取得に失敗しました。',
     updateFailed: '更新に失敗しました。',
     updateSuccess: '更新しました。',
-    childQuestSectionTitle: 'クエスト内容',
     rewardsSectionTitle: '付与スキル',
 } as const;
 

@@ -1,23 +1,21 @@
 import { reactive, ref } from 'vue';
-import { createMentorTool } from '@/api/mentor-tools/toolAdmin';
+import { createMentorTool, updateMentorTool } from '@/api/mentor-tools/toolAdmin';
 import type { MentorTool } from '@/types/mentor-quest/questAdmin';
 import { mentorToolMessages } from '@/constants/mentor-tools/toolAdmin';
 import { extractApiErrorMessage } from '@/utils/shared/extractApiErrorMessage';
 import { extractApiFieldErrors } from '@/utils/shared/extractApiFieldErrors';
 
-const CREATE_FIELDS = ['code', 'name'] as const;
+const FORM_FIELDS = ['name'] as const;
 
-interface ToolCreateForm {
-    code: string;
+interface ToolForm {
     name: string;
 }
 
-const createEmptyForm = (): ToolCreateForm => ({
-    code: '',
+const createEmptyForm = (): ToolForm => ({
     name: '',
 });
 
-export function useMentorToolCreate() {
+export function useMentorToolForm(editingTool: () => MentorTool | null) {
     const form = reactive(createEmptyForm());
     const isSubmitting = ref(false);
     const errorMessage = ref('');
@@ -25,13 +23,14 @@ export function useMentorToolCreate() {
 
     const clearErrors = (): void => {
         errorMessage.value = '';
-        for (const field of CREATE_FIELDS) {
+        for (const field of FORM_FIELDS) {
             delete fieldErrors[field];
         }
     };
 
     const resetForm = (): void => {
-        Object.assign(form, createEmptyForm());
+        const tool = editingTool();
+        form.name = tool?.name ?? '';
         clearErrors();
     };
 
@@ -43,20 +42,30 @@ export function useMentorToolCreate() {
         isSubmitting.value = true;
         clearErrors();
 
+        const payload = {
+            name: form.name.trim(),
+        };
+
         try {
-            const tool = await createMentorTool({
-                code: form.code.trim(),
-                name: form.name.trim(),
-            });
+            const tool = editingTool();
+            const saved = tool
+                ? await updateMentorTool(tool.id, payload)
+                : await createMentorTool(payload);
+
             resetForm();
-            return tool;
+            return saved;
         } catch (error: unknown) {
-            Object.assign(fieldErrors, extractApiFieldErrors(error, CREATE_FIELDS));
-            errorMessage.value = extractApiErrorMessage(
-                error,
-                undefined,
-                mentorToolMessages.createFailed,
-            );
+            Object.assign(fieldErrors, extractApiFieldErrors(error, FORM_FIELDS));
+            const hasFieldErrors = FORM_FIELDS.some((field) => fieldErrors[field]);
+            errorMessage.value = hasFieldErrors
+                ? ''
+                : extractApiErrorMessage(
+                      error,
+                      undefined,
+                      editingTool()
+                          ? mentorToolMessages.updateFailed
+                          : mentorToolMessages.createFailed,
+                  );
             return null;
         } finally {
             isSubmitting.value = false;

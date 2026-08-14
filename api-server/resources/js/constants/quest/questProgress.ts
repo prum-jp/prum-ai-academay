@@ -16,6 +16,9 @@ export const questProgressStatusLabels: Record<QuestProgressStatus, string> = {
     completed: '完了',
 };
 
+export const questProgressReviewRequiresSubmissionMessage =
+    '提出物を提出してからレビュー依頼してください。';
+
 export const getQuestProgressActions = (
     current: QuestProgressStatus,
 ): QuestProgressStatus[] => {
@@ -36,13 +39,8 @@ export const getQuestProgressActions = (
 
 export const getMentorQuestProgressActions = (
     current: QuestProgressStatus,
-): QuestProgressStatus[] => {
-    if (current === 'review_requested') {
-        return ['completed', 'rejected'];
-    }
-
-    return [];
-};
+): QuestProgressStatus[] =>
+    questProgressStatuses.filter((status) => status !== current);
 
 export const getQuestProgressActionsForRole = (
     current: QuestProgressStatus,

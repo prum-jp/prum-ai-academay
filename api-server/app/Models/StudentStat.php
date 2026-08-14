@@ -32,4 +32,40 @@ class StudentStat extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public static function ensureForUser(User $user): self
+    {
+        if ($user->relationLoaded('studentStat') && $user->studentStat !== null) {
+            return $user->studentStat;
+        }
+
+        $stat = self::query()->firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'stat_business_skill' => 0,
+                'stat_human_skill' => 0,
+                'stat_conceptual_skill' => 0,
+                'total_xp' => 0,
+            ],
+        );
+
+        $user->setRelation('studentStat', $stat);
+
+        return $stat;
+    }
+
+    public static function findForUser(User $user): ?self
+    {
+        if ($user->relationLoaded('studentStat')) {
+            return $user->studentStat;
+        }
+
+        $stat = self::query()->where('user_id', $user->id)->first();
+
+        if ($stat !== null) {
+            $user->setRelation('studentStat', $stat);
+        }
+
+        return $stat;
+    }
 }

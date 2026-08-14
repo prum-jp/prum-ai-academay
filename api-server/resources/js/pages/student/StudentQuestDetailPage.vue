@@ -46,6 +46,8 @@
                 :on-post="postComment"
             />
         </div>
+
+        <ToastNotice :message="toastMessage" :show="showToast" />
     </PageLoadGate>
 </template>
 
@@ -58,6 +60,7 @@ import QuestProgressStatusSelect from '@/components/rpg/quest-sheet/QuestProgres
 import QuestSheetLayout from '@/components/rpg/quest-sheet/QuestSheetLayout.vue';
 import QuestSheetContentSections from '@/components/rpg/quest-sheet/QuestSheetContentSections.vue';
 import QuestSheetComments from '@/components/rpg/quest-sheet/QuestSheetComments.vue';
+import ToastNotice from '@/components/rpg/shared/ToastNotice.vue';
 
 const {
     quest,
@@ -75,5 +78,7 @@ const {
     loadQuest,
     updateStatus,
     onSubmissionSaved,
+    showToast,
+    toastMessage,
 } = useStudentQuestSheetPage();
 </script>

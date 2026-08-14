@@ -15,7 +15,7 @@ final class QuestSubmissionPresenter
             return null;
         }
 
-        $url = $progress->submission_url;
+        $url = PublicStorage::urlForStored($progress->submission_url);
         $text = $progress->submission_text;
         $type = $progress->submission_type;
 
@@ -32,5 +32,10 @@ final class QuestSubmissionPresenter
             'url' => $url,
             'text' => $text,
         ];
+    }
+
+    public static function hasSubmission(?StudentQuestProgress $progress): bool
+    {
+        return self::fromProgress($progress) !== null;
     }
 }

@@ -8,6 +8,7 @@ use App\Models\StudentQuestProgress;
 use App\Models\User;
 use App\Support\PublicStorage;
 use App\Support\QuestProgressStatus;
+use App\Support\QuestSubmissionPresenter;
 use App\Support\QuestSubmissionType;
 use App\Support\StudentLevelResolver;
 use Illuminate\Http\UploadedFile;
@@ -25,6 +26,7 @@ class QuestProgressUpdateService
         private readonly StudentSkillGrantService $studentSkillGrantService,
         private readonly StudentLevelResolver $studentLevelResolver,
         private readonly StudentNotificationService $studentNotificationService,
+        private readonly MentorNotificationService $mentorNotificationService,
         private readonly QuestSubmissionStorageService $questSubmissionStorageService,
     ) {}
 
@@ -64,6 +66,16 @@ class QuestProgressUpdateService
             ]);
         }
 
+        if (
+            $nextStatus === QuestProgressStatus::REVIEW_REQUESTED
+            && $actor->isStudent()
+            && ! QuestSubmissionPresenter::hasSubmission($progress->exists ? $progress : null)
+        ) {
+            throw ValidationException::withMessages([
+                'status' => ['提出物を提出してからレビュー依頼してください。'],
+            ]);
+        }
+
         DB::transaction(function () use ($actor, $student, $quest, $progress, $previousStatus, $nextStatus): void {
             QuestProgressStatus::applyToProgress($progress, $nextStatus);
             $progress->save();
@@ -99,6 +111,14 @@ class QuestProgressUpdateService
             $actor,
         );
 
+        if (
+            $nextStatus === QuestProgressStatus::REVIEW_REQUESTED
+            && $previousStatus !== QuestProgressStatus::REVIEW_REQUESTED
+            && $actor->isStudent()
+        ) {
+            $this->mentorNotificationService->notifyReviewRequested($student, $quest);
+        }
+
         $studentLevel = $this->studentLevelResolver->resolve($student->fresh(['studentStat']));
 
         return $this->buildResult($quest, $student, $progress, $studentLevel);
@@ -132,27 +152,27 @@ class QuestProgressUpdateService
             QuestProgressStatus::applyToProgress($progress, QuestProgressStatus::NOT_STARTED);
         }
 
-        $previousUrl = $progress->submission_url;
+        $previousReference = $progress->submission_url;
 
-        DB::transaction(function () use ($actor, $student, $quest, $progress, $type, $url, $text, $file, $previousUrl): void {
-            PublicStorage::deleteUrl($previousUrl);
+        DB::transaction(function () use ($actor, $student, $quest, $progress, $type, $url, $text, $file, $previousReference): void {
+            PublicStorage::deleteStoredReference($previousReference);
 
-            $storedUrl = null;
+            $storedReference = null;
             $storedText = null;
 
             if ($type === QuestSubmissionType::LINK) {
-                $storedUrl = trim((string) $url);
+                $storedReference = trim((string) $url);
                 $storedText = null;
             } elseif ($type === QuestSubmissionType::TEXT) {
-                $storedUrl = null;
+                $storedReference = null;
                 $storedText = trim((string) $text);
             } elseif (QuestSubmissionType::isFileType($type) && $file !== null) {
-                $storedUrl = $this->questSubmissionStorageService->store($student, $quest, $file);
+                $storedReference = $this->questSubmissionStorageService->store($student, $quest, $file);
                 $storedText = null;
             }
 
             $progress->submission_type = $type;
-            $progress->submission_url = $storedUrl !== '' ? $storedUrl : null;
+            $progress->submission_url = $storedReference !== '' ? $storedReference : null;
             $progress->submission_text = $storedText !== '' ? $storedText : null;
             $progress->save();
 

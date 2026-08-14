@@ -1,5 +1,5 @@
 <template>
-    <MentorPanel :config="mentorNotificationsPageConfig">
+    <MentorPanel :config="mentorReviewRequestsPageConfig">
         <MentorNotificationTable
             :items="items"
             :is-loading="isLoading"
@@ -15,7 +15,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { selectMentorStudent } from '@/api/mentor/mentor';
-import { mentorNotificationsPageConfig } from '@/constants/mentor/mentorNotifications';
+import { mentorReviewRequestsPageConfig } from '@/constants/mentor/mentorReviewRequests';
 import { mentorStudentMessages } from '@/constants/mentor/mentor';
 import { useMentorReviewRequests } from '@/composables/mentor/useMentorReviewRequests';
 import type { MentorReviewRequestItem } from '@/types/mentor/mentorNotifications';

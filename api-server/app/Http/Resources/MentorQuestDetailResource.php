@@ -34,9 +34,12 @@ class MentorQuestDetailResource extends JsonResource
             }, []),
             'tool' => $this->whenLoaded('tool', fn () => $this->tool === null ? null : [
                 'id' => $this->tool->id,
-                'code' => $this->tool->code,
                 'name' => $this->tool->name,
             ]),
+            'tools' => $this->whenLoaded('tools', fn () => $this->tools
+                ->map(fn ($tool) => (new ToolResource($tool))->resolve())
+                ->values()
+                ->all(), []),
         ];
     }
 }

@@ -42,7 +42,6 @@ class MentorQuestProgressController extends Controller
             $studentLevel,
             $validated['status'],
             [QuestProgressStatus::class, 'mentorCanTransition'],
-            requireExistingProgress: true,
         );
 
         return response()->json(

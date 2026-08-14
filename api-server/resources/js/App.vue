@@ -3,8 +3,8 @@
         <nav v-if="isAuthenticated" class="app-nav">
             <div class="app-nav-links">
                 <RouterLink v-if="isMentor" :to="{ name: 'mentor-quests' }">クエスト管理</RouterLink>
-                <RouterLink v-if="isMentor" :to="{ name: 'mentor-notifications' }">
-                    {{ mentorNotificationsConfig.navLabel }}
+                <RouterLink v-if="isMentor" :to="{ name: 'mentor-review-requests' }">
+                    {{ mentorReviewRequestsConfig.navLabel }}
                     <span v-if="reviewRequestCount > 0" class="app-nav-badge">
                         {{ reviewRequestCount }}
                     </span>
@@ -14,6 +14,7 @@
             </div>
             <div class="app-nav-user-wrap">
                 <span class="app-nav-user">{{ user?.name }}</span>
+                <MentorNotificationBell v-if="isMentor" />
                 <StudentNotificationBell v-if="isStudent" />
             </div>
             <button class="app-nav-button" type="button" @click="handleLogout">ログアウト</button>
@@ -25,9 +26,10 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
-import { mentorNotificationsConfig } from '@/constants/mentor/mentorNotifications';
+import { mentorReviewRequestsConfig } from '@/constants/mentor/mentorReviewRequests';
 import { useAuth } from '@/composables/shared/useAuth';
 import { useMentorReviewRequests } from '@/composables/mentor/useMentorReviewRequests';
+import MentorNotificationBell from '@/components/rpg/mentor/MentorNotificationBell.vue';
 import StudentNotificationBell from '@/components/rpg/student/StudentNotificationBell.vue';
 
 const router = useRouter();

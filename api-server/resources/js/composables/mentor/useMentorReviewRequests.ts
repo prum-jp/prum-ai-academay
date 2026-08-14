@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { fetchMentorReviewRequests } from '@/api/mentor/mentorNotifications';
 import type { MentorReviewRequestItem } from '@/types/mentor/mentorNotifications';
-import { mentorNotificationsConfig } from '@/constants/mentor/mentorNotifications';
+import { mentorReviewRequestsConfig } from '@/constants/mentor/mentorReviewRequests';
 import { extractApiErrorMessage } from '@/utils/shared/extractApiErrorMessage';
 
 const items = ref<MentorReviewRequestItem[]>([]);
@@ -32,7 +32,7 @@ export function useMentorReviewRequests() {
             error.value = extractApiErrorMessage(
                 caughtError,
                 undefined,
-                mentorNotificationsConfig.loadFailed,
+                mentorReviewRequestsConfig.loadFailed,
             );
             items.value = [];
             total.value = 0;

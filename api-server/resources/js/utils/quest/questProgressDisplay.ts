@@ -50,14 +50,6 @@ export const buildQuestProgressSelectOptions = (
 ): QuestProgressSelectOption[] => {
     const selectable = new Set(getSelectableQuestProgressStatuses(current, role));
 
-    if (role === 'mentor') {
-        return [...selectable].map((value) => ({
-            value,
-            label: questProgressStatusLabels[value],
-            selectable: true,
-        }));
-    }
-
     return questProgressStatuses.map((value) => ({
         value,
         label: questProgressStatusLabels[value],

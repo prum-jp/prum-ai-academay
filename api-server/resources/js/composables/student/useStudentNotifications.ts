@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import {
+    deleteStudentNotification,
     fetchStudentNotifications,
-    markStudentNotificationAsRead,
 } from '@/api/student/studentNotifications';
 import { studentNotificationsConfig } from '@/constants/student/studentNotifications';
 import type { StudentNotificationItem } from '@/types/student/studentNotification';
@@ -46,14 +46,14 @@ export function useStudentNotifications() {
         }
     };
 
-    const markAsRead = async (notificationId: number): Promise<boolean> => {
+    const removeNotification = async (notificationId: number): Promise<boolean> => {
         try {
-            await markStudentNotificationAsRead(notificationId);
+            await deleteStudentNotification(notificationId);
             items.value = items.value.filter((item) => item.id !== notificationId);
             total.value = items.value.length;
             return true;
         } catch {
-            error.value = studentNotificationsConfig.markReadFailed;
+            error.value = studentNotificationsConfig.deleteFailed;
             return false;
         }
     };
@@ -64,6 +64,6 @@ export function useStudentNotifications() {
         isLoading,
         error,
         refresh,
-        markAsRead,
+        removeNotification,
     };
 }

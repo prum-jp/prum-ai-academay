@@ -29,8 +29,12 @@
                 <p v-else-if="items.length === 0" class="student-notification-panel-empty">
                     {{ studentNotificationsConfig.empty }}
                 </p>
-                <ul v-else class="student-notification-list">
-                    <li v-for="item in items" :key="item.id">
+                <ul
+                    v-else
+                    class="student-notification-list"
+                    :class="{ 'is-scrollable': items.length > 3 }"
+                >
+                    <li v-for="item in items" :key="item.id" class="student-notification-row">
                         <button
                             type="button"
                             class="student-notification-item"
@@ -40,6 +44,15 @@
                             <time class="student-notification-item-time">
                                 {{ formatDateTime(item.createdAt) }}
                             </time>
+                        </button>
+                        <button
+                            type="button"
+                            class="student-notification-delete"
+                            :aria-label="studentNotificationsConfig.deleteLabel"
+                            :disabled="deletingId === item.id"
+                            @click="onDelete(item)"
+                        >
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                         </button>
                     </li>
                 </ul>
@@ -58,11 +71,12 @@ import type { StudentNotificationItem } from '@/types/student/studentNotificatio
 import { formatDateTime } from '@/utils/shared/formatDateTime';
 
 const router = useRouter();
-const { items, total, isLoading, error, refresh, markAsRead } = useStudentNotifications();
+const { items, total, isLoading, error, refresh, removeNotification } = useStudentNotifications();
 
 const rootRef = ref<HTMLElement | null>(null);
 const panelRef = ref<HTMLElement | null>(null);
 const isOpen = ref(false);
+const deletingId = ref<number | null>(null);
 const panelStyle = ref<CSSProperties>({});
 
 const updatePanelPosition = (): void => {
@@ -112,14 +126,18 @@ const resolveRoute = (item: StudentNotificationItem): { name: string; params?: R
 };
 
 const onSelect = async (item: StudentNotificationItem): Promise<void> => {
-    const routeTarget = resolveRoute(item);
-    const marked = await markAsRead(item.id);
-    if (!marked) {
+    closeMenu();
+    await router.push(resolveRoute(item));
+};
+
+const onDelete = async (item: StudentNotificationItem): Promise<void> => {
+    if (deletingId.value !== null) {
         return;
     }
 
-    closeMenu();
-    await router.push(routeTarget);
+    deletingId.value = item.id;
+    await removeNotification(item.id);
+    deletingId.value = null;
 };
 
 const onDocumentClick = (event: MouseEvent): void => {

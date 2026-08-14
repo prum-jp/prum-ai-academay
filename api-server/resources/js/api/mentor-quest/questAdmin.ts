@@ -13,6 +13,7 @@ import type {
     UpdateMentorQuestUnitPayload,
 } from '@/types/mentor-quest/questAdmin';
 import type { QuestType } from '@/types/quest/quest';
+import type { QuestDeletionImpact } from '@/types/mentor-master/questMaster';
 
 export const fetchMentorQuestUnits = async (
     page = 1,
@@ -118,6 +119,26 @@ export const updateMentorQuest = async (
 
 export const deleteMentorQuest = async (id: number): Promise<void> => {
     await axios.delete(`/api/mentor/quests/${id}`);
+};
+
+export const fetchMentorQuestDeletionImpact = async (
+    id: number,
+): Promise<QuestDeletionImpact> => {
+    const { data } = await axios.get<{ data: QuestDeletionImpact }>(
+        `/api/mentor/quests/${id}/deletion-impact`,
+    );
+
+    return data.data;
+};
+
+export const fetchMentorQuestUnitDeletionImpact = async (
+    id: number,
+): Promise<QuestDeletionImpact> => {
+    const { data } = await axios.get<{ data: QuestDeletionImpact }>(
+        `/api/mentor/quest-units/${id}/deletion-impact`,
+    );
+
+    return data.data;
 };
 
 export const publishMentorQuest = async (

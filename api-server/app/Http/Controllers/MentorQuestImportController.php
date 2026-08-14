@@ -14,7 +14,10 @@ class MentorQuestImportController extends Controller
 
     public function preview(MentorQuestImportRequest $request): JsonResponse
     {
-        $items = $this->mentorQuestImportService->preview($request->validated('items'));
+        $items = $this->mentorQuestImportService->preview(
+            $request->validated('items'),
+            $request->validated('defaultQuestTier'),
+        );
 
         return response()->json([
             'data' => $items,
@@ -25,7 +28,10 @@ class MentorQuestImportController extends Controller
     public function apply(MentorQuestImportRequest $request): JsonResponse
     {
         $items = $request->validated('items');
-        $results = $this->mentorQuestImportService->apply($items);
+        $results = $this->mentorQuestImportService->apply(
+            $items,
+            $request->validated('defaultQuestTier'),
+        );
 
         return response()->json([
             'data' => $results,

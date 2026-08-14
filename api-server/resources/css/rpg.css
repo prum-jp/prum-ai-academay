@@ -613,6 +613,10 @@ body {
 
 .mentor-tool-card {
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     background: #ffffff;
     border: 2px solid #e8d5c0;
     border-radius: 12px;
@@ -621,16 +625,32 @@ body {
 
 .mentor-tool-card h3 {
     margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: 15px;
     font-weight: 900;
     color: var(--text-dark);
 }
 
-.mentor-tool-card-code {
-    margin: 2px 0 0;
+.mentor-tool-card-edit {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 2px solid #e8d5c0;
+    border-radius: 8px;
+    background: #fff8f0;
+    color: var(--text-dark);
+    font: inherit;
     font-size: 12px;
-    font-weight: 700;
-    color: #6b5540;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.mentor-tool-card-edit:hover {
+    border-color: var(--orange-main);
+    color: var(--orange-main);
 }
 
 .mentor-student-search {
@@ -970,7 +990,6 @@ body {
     border: 2px solid var(--bg-dark);
     border-radius: 12px;
     background: #fff;
-    box-shadow: 4px 4px 0 var(--bg-dark);
 }
 
 .mentor-quest-unit-menu-item {
@@ -996,6 +1015,25 @@ body {
 .mentor-quest-unit-menu-item:disabled {
     opacity: 0.65;
     cursor: not-allowed;
+}
+
+.mentor-quest-unit-menu-item.is-danger {
+    color: #c0392b;
+}
+
+.mentor-quest-unit-menu-item.is-danger:hover:not(:disabled) {
+    background: #fff0f0;
+    color: #a02828;
+}
+
+.mentor-quest-unit-menu--master {
+    width: 112px;
+    min-width: 112px;
+    max-width: 112px;
+}
+
+.mentor-quest-unit-menu--master .mentor-quest-unit-menu-item {
+    padding-inline: 10px;
 }
 
 .mentor-quest-unit-assign-summary {
@@ -1741,15 +1779,15 @@ body {
     bottom: -100px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--bg-dark);
-    color: #ffffff;
+    background-color: #ffffff;
+    color: var(--text-dark);
     padding: 12px 24px;
     border-radius: 30px;
     border: 3px solid var(--yellow-accent);
     font-weight: 900;
     z-index: 100;
     transition: bottom 0.3s ease-out;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
 .toast.show {
@@ -2120,15 +2158,13 @@ body {
     background: #fff;
     color: var(--orange-main);
     cursor: pointer;
-    box-shadow: 0 3px 0 var(--orange-sub);
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 
 .rpg-modal-close:active {
-    transform: translateY(3px);
-    box-shadow: 0 0 0 var(--bg-dark);
+    background: #fff8f0;
 }
 
 .rpg-modal-body {

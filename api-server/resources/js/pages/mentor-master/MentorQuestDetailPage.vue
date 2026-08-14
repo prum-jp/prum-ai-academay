@@ -23,16 +23,6 @@
             v-model:title="displayForm.title"
             v-model:sections="sectionForm"
             :quest-no="quest.sortOrder"
-            :section-title="
-                quest.type === 'personal'
-                    ? mentorQuestCreatePageConfig.childQuestSectionTitle
-                    : ''
-            "
-            :status-label="
-                quest.type === 'personal'
-                    ? mentorPersonalAssignmentSectionConfig.childQuestTypeLabel
-                    : typeLabel
-            "
             :child-quest-style="quest.type === 'personal'"
             :disabled="true"
             title-readonly
@@ -49,11 +39,6 @@
 import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchMentorQuestDetail } from '@/api/mentor-quest/questAdmin';
-import {
-    mentorPersonalAssignmentSectionConfig,
-    mentorQuestCreatePageConfig,
-    mentorQuestCreateTypeOptions,
-} from '@/constants/mentor-quest/questAdmin';
 import { mentorQuestMasterDetailPageConfig } from '@/constants/mentor-master/questMaster';
 import type { MentorQuestCreateType, MentorQuestDetail } from '@/types/mentor-quest/questAdmin';
 import { useRouteResourceLoader } from '@/composables/shared/useRouteResourceLoader';
@@ -94,14 +79,6 @@ const questCreateType = computed((): MentorQuestCreateType => {
     return 'special';
 });
 
-const typeLabel = computed((): string => {
-    const option = mentorQuestCreateTypeOptions.find(
-        (item) => item.value === questCreateType.value,
-    );
-
-    return option?.label ?? questCreateType.value;
-});
-
 const metaRows = computed(() => {
     if (!quest.value) {
         return [];
@@ -109,6 +86,7 @@ const metaRows = computed(() => {
 
     return buildQuestMetaRows({
         tool: quest.value.tool,
+        tools: quest.value.tools,
         difficulty: quest.value.difficulty,
         experiencePoints: quest.value.experiencePoints,
         questTier: quest.value.questTier,

@@ -52,7 +52,7 @@ export function useMentorQuestImport() {
 
         try {
             const text = await file.text();
-            const parsed = parseQuestImportCsv(text, { defaultQuestTier: questTier });
+            const parsed = parseQuestImportCsv(text);
             parseErrors.value = parsed.errors;
 
             if (parsed.items.length === 0) {
@@ -60,7 +60,10 @@ export function useMentorQuestImport() {
                 return false;
             }
 
-            const preview = await previewQuestImport(toImportPayload(parsed.items));
+            const preview = await previewQuestImport(
+                toImportPayload(parsed.items),
+                defaultQuestTier.value,
+            );
             items.value = applyPreviewResponse(preview, parsed.items);
             meta.value = preview.meta;
             step.value = 'preview';
@@ -83,7 +86,10 @@ export function useMentorQuestImport() {
         isLoading.value = true;
 
         try {
-            const preview = await previewQuestImport(toImportPayload(items.value));
+            const preview = await previewQuestImport(
+                toImportPayload(items.value),
+                defaultQuestTier.value,
+            );
             items.value = applyPreviewResponse(preview, items.value);
             meta.value = preview.meta;
         } catch (error: unknown) {
@@ -121,7 +127,10 @@ export function useMentorQuestImport() {
         isApplying.value = true;
 
         try {
-            const response = await applyQuestImport(toImportPayload(items.value));
+            const response = await applyQuestImport(
+                toImportPayload(items.value),
+                defaultQuestTier.value,
+            );
             return response.data;
         } catch (error: unknown) {
             errorMessage.value = extractApiErrorMessage(

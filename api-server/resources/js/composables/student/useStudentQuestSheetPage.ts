@@ -5,11 +5,16 @@ import { useAuth } from '@/composables/shared/useAuth';
 import { useMentorReviewRequests } from '@/composables/mentor/useMentorReviewRequests';
 import { useQuestComments } from '@/composables/quest/useQuestComments';
 import { useQuestProgress } from '@/composables/quest/useQuestProgress';
+import { useToastNotice } from '@/composables/shared/useToastNotice';
 import { questSheetConfig } from '@/constants/quest-sheet/questSheet';
-import type { QuestProgressStatus } from '@/constants/quest/questProgress';
+import {
+    questProgressReviewRequiresSubmissionMessage,
+    type QuestProgressStatus,
+} from '@/constants/quest/questProgress';
 import type { QuestItem } from '@/types/quest/quest';
 import { parseQuestDescriptionSections } from '@/utils/quest-sheet/questDescriptionSections';
 import { buildQuestMetaRows } from '@/utils/quest-sheet/questSheetMeta';
+import { extractApiErrorMessage } from '@/utils/shared/extractApiErrorMessage';
 import type { QuestSheetSectionItem } from '@/components/rpg/quest-sheet/QuestSheetContentSections.vue';
 
 export function useStudentQuestSheetPage() {
@@ -17,6 +22,7 @@ export function useStudentQuestSheetPage() {
     const { isMentor } = useAuth();
     const { isUpdating, updateQuestStatus } = useQuestProgress();
     const { refresh: refreshReviewRequests } = useMentorReviewRequests();
+    const { showToast, toastMessage, showNotice } = useToastNotice();
 
     const quest = ref<QuestItem | null>(null);
     const isLoading = ref(true);
@@ -85,18 +91,28 @@ export function useStudentQuestSheetPage() {
             return;
         }
 
-        const role = isMentor.value ? 'mentor' : 'student';
-        const updated = await updateQuestStatus(quest.value, status, role);
-
-        if (!updated) {
+        if (status === 'review_requested' && !quest.value.submission && !isMentor.value) {
+            showNotice(questProgressReviewRequiresSubmissionMessage);
             return;
         }
 
-        quest.value = updated;
-        await refreshComments();
+        const role = isMentor.value ? 'mentor' : 'student';
 
-        if (isMentor.value) {
-            void refreshReviewRequests();
+        try {
+            const updated = await updateQuestStatus(quest.value, status, role);
+
+            if (!updated) {
+                return;
+            }
+
+            quest.value = updated;
+            await refreshComments();
+
+            if (isMentor.value) {
+                void refreshReviewRequests();
+            }
+        } catch (error) {
+            showNotice(extractApiErrorMessage(error, 'status'));
         }
     };
 
@@ -130,5 +146,7 @@ export function useStudentQuestSheetPage() {
         loadQuest,
         updateStatus,
         onSubmissionSaved,
+        showToast,
+        toastMessage,
     };
 }

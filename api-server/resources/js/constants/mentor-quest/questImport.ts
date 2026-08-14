@@ -63,7 +63,7 @@ export const questImportModalConfig = {
     uploadLabel: 'CSVファイル',
     defaultQuestTierLabel: 'クエスト段階',
     defaultQuestTierHint:
-        'CSVにクエスト段階列がない行は、ここで選んだ段階（低・中・高・エキスパート）を適用します。',
+        'CSVにクエスト段階列がない場合、新規登録行にのみここで選んだ段階（低・中・高・エキスパート）を適用します。既存クエストの段階は維持されます。',
     uploadHint:
         'UTF-8 の CSV を選択してください。並び順はクエストが No、ユニットが Unit（なければ最小 No）に対応します。概要などにリンクを入れる場合は、スプレッドシートの「リンク挿入」ではなく [表示名](URL) とセルに直接入力してください（CSV では URL が失われます）。ツール列に複数指定する場合は「Gemini, Googleスプレッドシート」のようにカンマ区切りにしてください。',
     cancelLabel: 'キャンセル',

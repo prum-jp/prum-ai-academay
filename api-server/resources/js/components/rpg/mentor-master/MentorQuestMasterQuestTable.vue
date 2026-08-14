@@ -6,6 +6,7 @@
             <MentorRowActionMenu
                 :detail-to="mentorQuestMasterQuestDetailRoute(quest.id)"
                 :edit-to="mentorQuestMasterQuestEditRoute(quest.id)"
+                @delete="emit('delete', quest)"
             />
         </li>
     </ol>
@@ -21,6 +22,10 @@ import MentorRowActionMenu from '@/components/rpg/mentor-master/MentorRowActionM
 
 defineProps<{
     quests: QuestMasterQuestRow[];
+}>();
+
+const emit = defineEmits<{
+    delete: [quest: QuestMasterQuestRow];
 }>();
 </script>
 

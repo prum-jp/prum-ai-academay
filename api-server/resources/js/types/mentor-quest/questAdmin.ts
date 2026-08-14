@@ -79,7 +79,6 @@ export interface CreateMentorQuestPayload {
 
 export interface MentorTool {
     id: number;
-    code: string;
     name: string;
     icon: string | null;
 }
@@ -147,7 +146,8 @@ export interface MentorQuestDetail {
     sortOrder: number;
     toolId: number | null;
     toolIds?: number[];
-    tool: { id: number; code: string; name: string } | null;
+    tool: { id: number; name: string } | null;
+    tools?: Array<{ id: number; name: string; icon?: string | null }>;
     estimatedDuration: string | null;
     difficulty: number | null;
     experiencePoints: number;

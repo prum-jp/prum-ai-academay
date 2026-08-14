@@ -38,3 +38,7 @@ export const createMentorStudent = async (
 
     return data.data;
 };
+
+export const deleteMentorStudent = async (studentId: number): Promise<void> => {
+    await axios.delete(`/api/mentor/students/${studentId}`);
+};

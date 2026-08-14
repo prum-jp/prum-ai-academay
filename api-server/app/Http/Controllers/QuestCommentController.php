@@ -6,6 +6,7 @@ use App\Http\Resources\QuestCommentResource;
 use App\Models\Quest;
 use App\Models\StudentQuestComment;
 use App\Models\User;
+use App\Services\MentorNotificationService;
 use App\Services\QuestActivityRecorder;
 use App\Services\StudentNotificationService;
 use App\Services\StudentQuestAccessService;
@@ -19,6 +20,7 @@ class QuestCommentController extends Controller
         private readonly StudentQuestAccessService $studentQuestAccessService,
         private readonly QuestActivityRecorder $questActivityRecorder,
         private readonly StudentNotificationService $studentNotificationService,
+        private readonly MentorNotificationService $mentorNotificationService,
     ) {}
 
     public function index(Request $request, int $questId): JsonResponse
@@ -65,6 +67,14 @@ class QuestCommentController extends Controller
             $author,
             $validated['body'],
         );
+
+        if ($author->isStudent()) {
+            $this->mentorNotificationService->notifyStudentComment(
+                $student,
+                $quest,
+                $validated['body'],
+            );
+        }
 
         $comment->load(['author.studentProfile']);
 
