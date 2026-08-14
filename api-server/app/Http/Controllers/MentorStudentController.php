@@ -6,6 +6,7 @@ use App\Http\Requests\SelectMentorStudentRequest;
 use App\Http\Requests\StoreMentorStudentRequest;
 use App\Http\Resources\StudentListItemResource;
 use App\Models\User;
+use App\Services\MentorStudentDeletionService;
 use App\Services\MentorStudentRegistrar;
 use App\Services\MentorStudentService;
 use App\Support\AdventurerContext;
@@ -20,6 +21,7 @@ class MentorStudentController extends Controller
         private readonly StudentLevelResolver $studentLevelResolver,
         private readonly MentorStudentService $mentorStudentService,
         private readonly MentorStudentRegistrar $mentorStudentRegistrar,
+        private readonly MentorStudentDeletionService $mentorStudentDeletionService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -83,6 +85,16 @@ class MentorStudentController extends Controller
                 includeEmail: true,
             ))->resolve(),
         ], 201);
+    }
+
+    public function destroy(Request $request, int $studentId): JsonResponse
+    {
+        $student = $this->mentorStudentService->findStudent($studentId);
+        $this->mentorStudentDeletionService->delete($student, $request);
+
+        return response()->json([
+            'message' => '受講生アカウントを削除しました。',
+        ]);
     }
 
     public function select(SelectMentorStudentRequest $request): JsonResponse

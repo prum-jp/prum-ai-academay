@@ -53,6 +53,16 @@
                         {{ mentorPersonalAssignmentSectionConfig.menuHomeLabel }}
                     </button>
                 </li>
+                <li>
+                    <button
+                        type="button"
+                        class="mentor-quest-unit-menu-item is-danger"
+                        :disabled="disabled"
+                        @click="onDeleteClick"
+                    >
+                        {{ mentorPersonalAssignmentSectionConfig.menuDeleteLabel }}
+                    </button>
+                </li>
             </ul>
         </div>
     </article>
@@ -61,6 +71,7 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue';
 import type { MentorStudent } from '@/types/mentor/mentor';
+import { useExclusiveRowMenuState } from '@/composables/shared/useExclusiveRowMenuState';
 import { avatarConfig } from '@/constants/profile/avatar';
 import { mentorPersonalAssignmentSectionConfig } from '@/constants/mentor-quest/questAdmin';
 
@@ -72,21 +83,23 @@ const props = defineProps<{
 const emit = defineEmits<{
     'open-assign': [student: MentorStudent];
     'open-home': [student: MentorStudent];
+    delete: [student: MentorStudent];
 }>();
 
 const menuRef = ref<HTMLElement | null>(null);
-const isMenuOpen = ref(false);
-
-const closeMenu = (): void => {
-    isMenuOpen.value = false;
-};
+const { isMenuOpen, openMenu: markMenuOpen, closeMenu } = useExclusiveRowMenuState();
 
 const toggleMenu = (): void => {
     if (props.disabled) {
         return;
     }
 
-    isMenuOpen.value = !isMenuOpen.value;
+    if (isMenuOpen.value) {
+        closeMenu();
+        return;
+    }
+
+    markMenuOpen();
 };
 
 const onDocumentClick = (event: MouseEvent): void => {
@@ -98,13 +111,23 @@ const onDocumentClick = (event: MouseEvent): void => {
 watch(isMenuOpen, (open) => {
     if (open) {
         document.addEventListener('click', onDocumentClick);
+        document.addEventListener('keydown', onDocumentKeydown);
     } else {
         document.removeEventListener('click', onDocumentClick);
+        document.removeEventListener('keydown', onDocumentKeydown);
     }
 });
 
+const onDocumentKeydown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+        closeMenu();
+    }
+};
+
 onUnmounted(() => {
+    closeMenu();
     document.removeEventListener('click', onDocumentClick);
+    document.removeEventListener('keydown', onDocumentKeydown);
 });
 
 const onAssignClick = (): void => {
@@ -115,5 +138,10 @@ const onAssignClick = (): void => {
 const onHomeClick = (): void => {
     closeMenu();
     emit('open-home', props.student);
+};
+
+const onDeleteClick = (): void => {
+    closeMenu();
+    emit('delete', props.student);
 };
 </script>

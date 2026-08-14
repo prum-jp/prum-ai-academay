@@ -28,6 +28,7 @@
                     :disabled="disabled || isSelecting"
                     @open-assign="openAssignModal"
                     @open-home="onOpenHome"
+                    @delete="openDeleteModal"
                 />
             </template>
 
@@ -44,17 +45,31 @@
             @close="closeAssignModal"
             @notify="(message) => emit('notify', message)"
         />
+
+        <MentorStudentDeleteModal
+            :open="isDeleteModalOpen"
+            :target="deleteTarget"
+            :is-deleting="isDeleting"
+            :error-message="deleteErrorMessage"
+            @close="closeDeleteModal"
+            @confirm="onConfirmDelete"
+        />
     </section>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { mentorPersonalAssignmentSectionConfig } from '@/constants/mentor-quest/questAdmin';
+import {
+    mentorPersonalAssignmentSectionConfig,
+    mentorStudentDeleteModalConfig,
+} from '@/constants/mentor-quest/questAdmin';
 import { mentorStudentMessages, mentorStudentSearchConfig } from '@/constants/mentor/mentor';
 import type { MentorStudent } from '@/types/mentor/mentor';
+import { useMentorStudentDelete } from '@/composables/mentor/useMentorStudentDelete';
 import { useMentorStudents } from '@/composables/mentor/useMentorStudents';
 import MentorPersonalAssignmentRow from '@/components/rpg/mentor-quest/MentorPersonalAssignmentRow.vue';
+import MentorStudentDeleteModal from '@/components/rpg/mentor-quest/MentorStudentDeleteModal.vue';
 import MentorStudentQuestUnitAssignModal from '@/components/rpg/mentor/MentorStudentQuestUnitAssignModal.vue';
 import StudentListSection from '@/components/rpg/student/StudentListSection.vue';
 
@@ -83,6 +98,18 @@ const {
     selectStudent,
 } = useMentorStudents();
 
+const {
+    deleteTarget,
+    isDeleteModalOpen,
+    isDeleting,
+    errorMessage: deleteErrorMessage,
+    openDeleteModal,
+    closeDeleteModal,
+    confirmDelete,
+} = useMentorStudentDelete(async () => {
+    await loadStudents(meta.value?.currentPage ?? 1);
+});
+
 const openAssignModal = (student: MentorStudent): void => {
     assignModalStudent.value = student;
 };
@@ -98,5 +125,12 @@ const onOpenHome = async (student: MentorStudent): Promise<void> => {
     }
 
     await router.push({ name: 'student-sheet' });
+};
+
+const onConfirmDelete = async (): Promise<void> => {
+    const deleted = await confirmDelete();
+    if (deleted) {
+        emit('notify', mentorStudentDeleteModalConfig.deleteSuccess);
+    }
 };
 </script>

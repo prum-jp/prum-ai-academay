@@ -63,6 +63,7 @@ Route::prefix('api')->group(function (): void {
         Route::patch('/mentor/quests/{questId}/progress', [MentorQuestProgressController::class, 'update']);
         Route::get('/mentor/students/picker', [MentorStudentController::class, 'picker']);
         Route::post('/mentor/students', [MentorStudentController::class, 'store']);
+        Route::delete('/mentor/students/{studentId}', [MentorStudentController::class, 'destroy']);
         Route::put('/mentor/target-student', [MentorStudentController::class, 'select']);
         Route::get('/mentor/students/{studentId}/quest-units', [MentorStudentQuestUnitAssignmentController::class, 'index']);
         Route::post('/mentor/students/{studentId}/quest-units/{questUnit}/assign', [MentorStudentQuestUnitAssignmentController::class, 'store']);

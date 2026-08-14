@@ -57,7 +57,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import { RouterLink, type RouteLocationRaw } from 'vue-router';
 import { mentorQuestMasterMenuConfig } from '@/constants/mentor-master/questMaster';
-import { useMentorRowActionMenuState } from '@/composables/mentor-master/useMentorRowActionMenuState';
+import { useExclusiveRowMenuState } from '@/composables/shared/useExclusiveRowMenuState';
 
 defineProps<{
     detailTo: RouteLocationRaw;
@@ -73,7 +73,7 @@ const wrapRef = ref<HTMLElement | null>(null);
 const triggerRef = ref<HTMLButtonElement | null>(null);
 const menuRef = ref<HTMLElement | null>(null);
 const menuStyle = ref<CSSProperties>({});
-const { isMenuOpen, openMenu: markMenuOpen, closeMenu } = useMentorRowActionMenuState();
+const { isMenuOpen, openMenu: markMenuOpen, closeMenu } = useExclusiveRowMenuState();
 
 const updateMenuPosition = (): void => {
     const trigger = triggerRef.value;
