@@ -18,6 +18,6 @@ class QuestSubmissionStorageService
 
         $path = $file->storeAs($directory, $filename, PublicStorage::diskName());
 
-        return PublicStorage::url($path);
+        return $path;
     }
 }

@@ -152,27 +152,27 @@ class QuestProgressUpdateService
             QuestProgressStatus::applyToProgress($progress, QuestProgressStatus::NOT_STARTED);
         }
 
-        $previousUrl = $progress->submission_url;
+        $previousReference = $progress->submission_url;
 
-        DB::transaction(function () use ($actor, $student, $quest, $progress, $type, $url, $text, $file, $previousUrl): void {
-            PublicStorage::deleteUrl($previousUrl);
+        DB::transaction(function () use ($actor, $student, $quest, $progress, $type, $url, $text, $file, $previousReference): void {
+            PublicStorage::deleteStoredReference($previousReference);
 
-            $storedUrl = null;
+            $storedReference = null;
             $storedText = null;
 
             if ($type === QuestSubmissionType::LINK) {
-                $storedUrl = trim((string) $url);
+                $storedReference = trim((string) $url);
                 $storedText = null;
             } elseif ($type === QuestSubmissionType::TEXT) {
-                $storedUrl = null;
+                $storedReference = null;
                 $storedText = trim((string) $text);
             } elseif (QuestSubmissionType::isFileType($type) && $file !== null) {
-                $storedUrl = $this->questSubmissionStorageService->store($student, $quest, $file);
+                $storedReference = $this->questSubmissionStorageService->store($student, $quest, $file);
                 $storedText = null;
             }
 
             $progress->submission_type = $type;
-            $progress->submission_url = $storedUrl !== '' ? $storedUrl : null;
+            $progress->submission_url = $storedReference !== '' ? $storedReference : null;
             $progress->submission_text = $storedText !== '' ? $storedText : null;
             $progress->save();
 

@@ -18,16 +18,16 @@ PRUM AI Academy の本番環境を AWS Lightsail 上に構築します。
 - 利用規模: 受講生 13〜15 名、同時接続 5〜8 名程度
 
 ■ 使用サービス
-- Amazon Lightsail Container Service（Micro 想定）
-- Amazon Lightsail Managed Database（MySQL）
-- Amazon S3（アバター・クエスト提出物）
+- Amazon Lightsail Container Service（Micro 想定・サービス名: `ai-academy-prd`）
+- Amazon Lightsail Managed Database（MySQL・インスタンス名: `ai-academy-prd-db`）
+- Amazon S3 バケット `ai-academy-prd`（アバター・クエスト提出物）
 - （任意）Amazon SES / CloudWatch / Budgets
 
 ■ 必要な IAM 権限
 - リージョン: ap-northeast-1（東京）
 - Lightsail: Container / Database の作成・更新・削除・デプロイ
-- S3: バケット prum-ai-academy-prod（名称は要相談）の作成・管理
-- IAM: アプリ用 IAM ユーザーとアクセスキーの作成（S3 専用・最小権限）
+- S3: バケット `ai-academy-prd` の作成・管理
+- IAM: アプリ用 IAM ユーザー `ai-academy-prd-s3-app` とアクセスキーの作成（S3 専用・最小権限）
 
 ■ ログイン方法
 - AWS コンソールへのログイン URL（SSO または IAM ユーザー）
@@ -35,7 +35,6 @@ PRUM AI Academy の本番環境を AWS Lightsail 上に構築します。
 
 ■ 確認したいこと
 - 使用する AWS アカウント ID
-- S3 バケット名の命名ルール
 - 本番ドメイン（APP_URL 用）
 - 月額コスト上限の承認（目安: 約 $26〜29/月 ≒ 4,000〜5,500 円/月 税別）
 
@@ -50,7 +49,7 @@ PRUM AI Academy の本番環境を AWS Lightsail 上に構築します。
 
 ## 2. 開発者用 IAM ポリシー（管理者がアタッチするもの）
 
-アカウント ID・バケット名は環境に合わせて置き換えてください。
+アカウント ID（`ACCOUNT_ID`）のみ環境に合わせて置き換えてください。リソース名は `ai-academy-prd` で統一しています。
 
 ### 2-1. Lightsail 操作
 
@@ -74,8 +73,6 @@ Lightsail だけ絞る場合は AWS マネージドポリシー `AmazonLightsail
 
 ### 2-2. S3（特定バケットのみ）
 
-`BUCKET_NAME` を実際の名前に変更（例: `prum-ai-academy-prod`）。
-
 ```json
 {
   "Version": "2012-10-17",
@@ -96,7 +93,7 @@ Lightsail だけ絞る場合は AWS マネージドポリシー `AmazonLightsail
         "s3:GetEncryptionConfiguration",
         "s3:PutEncryptionConfiguration"
       ],
-      "Resource": "arn:aws:s3:::BUCKET_NAME"
+      "Resource": "arn:aws:s3:::ai-academy-prd"
     },
     {
       "Sid": "S3ObjectManage",
@@ -107,7 +104,7 @@ Lightsail だけ絞る場合は AWS マネージドポリシー `AmazonLightsail
         "s3:DeleteObject",
         "s3:PutObjectAcl"
       ],
-      "Resource": "arn:aws:s3:::BUCKET_NAME/*"
+      "Resource": "arn:aws:s3:::ai-academy-prd/*"
     },
     {
       "Sid": "S3ListForConsole",
@@ -142,7 +139,7 @@ Lightsail だけ絞る場合は AWS マネージドポリシー `AmazonLightsail
         "iam:ListAccessKeys",
         "iam:TagUser"
       ],
-      "Resource": "arn:aws:iam::ACCOUNT_ID:user/prum-ai-academy-*"
+      "Resource": "arn:aws:iam::ACCOUNT_ID:user/ai-academy-prd-*"
     }
   ]
 }
@@ -177,7 +174,7 @@ Lightsail だけ絞る場合は AWS マネージドポリシー `AmazonLightsail
 
 ## 3. アプリ用 IAM ユーザー（Laravel → S3）
 
-構築時に自分で作るユーザー名例: `prum-ai-academy-s3-app`
+構築時に自分で作るユーザー名: `ai-academy-prd-s3-app`
 
 ### ポリシー（インラインポリシー）
 
@@ -192,12 +189,12 @@ Lightsail だけ絞る場合は AWS マネージドポリシー `AmazonLightsail
         "s3:GetObject",
         "s3:DeleteObject"
       ],
-      "Resource": "arn:aws:s3:::BUCKET_NAME/*"
+      "Resource": "arn:aws:s3:::ai-academy-prd/*"
     },
     {
       "Effect": "Allow",
       "Action": "s3:ListBucket",
-      "Resource": "arn:aws:s3:::BUCKET_NAME"
+      "Resource": "arn:aws:s3:::ai-academy-prd"
     }
   ]
 }
@@ -210,7 +207,7 @@ FILESYSTEM_PUBLIC_DISK=s3
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
 AWS_DEFAULT_REGION=ap-northeast-1
-AWS_BUCKET=BUCKET_NAME
+AWS_BUCKET=ai-academy-prd
 ```
 
 ---
@@ -225,14 +222,13 @@ AWS_BUCKET=BUCKET_NAME
 
 ### Phase 1: S3
 
-- [ ] バケット作成（例: `prum-ai-academy-prod`）
-- [ ] ブロックパブリックアクセス設定を確認（必要に応じてオブジェクト URL は署名付き or CloudFront）
-- [ ] アプリ用 IAM ユーザー作成 + ポリシーアタッチ + アクセスキー発行
+- [ ] バケット `ai-academy-prd` を作成（Block Public Access すべてオンで可）
+- [ ] アプリ用 IAM ユーザー `ai-academy-prd-s3-app` を作成 + ポリシーアタッチ + アクセスキー発行
 - [ ] キーを安全な場所に保管（Lightsail 環境変数用）
 
 ### Phase 2: Lightsail MySQL
 
-- [ ] Standard プラン等で MySQL 作成
+- [ ] Standard プラン等で MySQL `ai-academy-prd-db` を作成
 - [ ] DB 名・ユーザー・パスワードを控える
 - [ ] エンドポイント（ホスト名）を控える
 - [ ] 必要ならアプリコンテナからの接続を許可
@@ -241,15 +237,15 @@ AWS_BUCKET=BUCKET_NAME
 
 ```bash
 cd api-server
-docker build -t prum-ai-academy .
+docker build -t ai-academy-prd .
 ```
 
 - [ ] ローカルでビルド成功
-- [ ] Lightsail Container に push / デプロイ（Lightsail の手順に従う）
+- [ ] `aws lightsail push-container-image --service-name ai-academy-prd --label ai-academy-prd --image ai-academy-prd` で push
 
 ### Phase 4: Lightsail Container Service
 
-- [ ] Micro プランで Container Service 作成
+- [ ] Micro プランで Container Service `ai-academy-prd` を作成
 - [ ] 環境変数を設定（`.env.production.example` 参照）
 - [ ] 必須: `APP_KEY`, `APP_URL`, `DB_*`, `AWS_*`, `FILESYSTEM_PUBLIC_DISK=s3`
 - [ ] 必須: `DB_FRESH=false`, `RUN_SEEDER=false`
@@ -285,7 +281,7 @@ docker build -t prum-ai-academy .
 | `AWS_ACCESS_KEY_ID` | アプリ用 IAM |
 | `AWS_SECRET_ACCESS_KEY` | アプリ用 IAM |
 | `AWS_DEFAULT_REGION` | `ap-northeast-1` |
-| `AWS_BUCKET` | バケット名 |
+| `AWS_BUCKET` | `ai-academy-prd` |
 | `SESSION_DRIVER` | `database` |
 | `SESSION_SECURE_COOKIE` | `true` |
 | `CACHE_STORE` | `database` |

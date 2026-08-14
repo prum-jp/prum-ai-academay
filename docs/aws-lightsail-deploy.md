@@ -12,12 +12,23 @@ PRUM AI Academy を AWS Lightsail 上で本番運用するためのガイドで�
 | メール | SES（任意） | 通知メール |
 | 監視 | CloudWatch / Budgets（任意） | ログ・アラート・コスト |
 
+## 本番リソース名（統一）
+
+| リソース | 名前 |
+|---|---|
+| S3 バケット | `ai-academy-prd` |
+| IAM ユーザー（アプリ → S3） | `ai-academy-prd-s3-app` |
+| Lightsail Container Service | `ai-academy-prd` |
+| Lightsail MySQL | `ai-academy-prd-db` |
+| MySQL データベース名（`DB_DATABASE`） | `prum_ai_academy` |
+| Docker イメージ tag | `ai-academy-prd` |
+
 ## 1. 事前準備
 
 ### S3 バケット
 
-1. `ap-northeast-1` にバケットを作成（例: `prum-ai-academy-prod`）
-2. パブリック読み取りは **バケットポリシー** または **CloudFront** で制御
+1. `ap-northeast-1` にバケット `ai-academy-prd` を作成
+2. **Block Public Access はすべてオン** のままで可（アプリは署名付き URL で読み取り）
 3. IAM ユーザーまたはロールに以下を付与:
    - `s3:PutObject`
    - `s3:GetObject`
@@ -46,6 +57,7 @@ cp .env.production.example .env.production
 | `DB_*` | Lightsail MySQL の接続情報 |
 | `FILESYSTEM_PUBLIC_DISK` | `s3` |
 | `AWS_*` | S3 バケットと IAM キー |
+| `AWS_S3_TEMPORARY_URL_MINUTES` | 署名付き URL の有効期限（分・既定 60） |
 | `SESSION_SECURE_COOKIE` | `true` |
 | `DB_FRESH` / `RUN_SEEDER` | 必ず `false` |
 
@@ -53,7 +65,16 @@ cp .env.production.example .env.production
 
 ```bash
 cd api-server
-docker build -t prum-ai-academy .
+docker build -t ai-academy-prd .
+```
+
+Lightsail へ push する例:
+
+```bash
+aws lightsail push-container-image \
+  --service-name ai-academy-prd \
+  --label ai-academy-prd \
+  --image ai-academy-prd
 ```
 
 イメージには以下が含まれます:
@@ -66,7 +87,7 @@ docker build -t prum-ai-academy .
 
 ## 4. Lightsail Container Service
 
-1. コンテナサービスを作成（Micro プランから開始）
+1. コンテナサービス `ai-academy-prd` を作成（Micro プランから開始）
 2. 上記 Docker イメージをプッシュ / デプロイ
 3. **環境変数** に `.env.production` の内容を設定
 4. 公開ポート: コンテナ `80` → ロードバランサー `443`（HTTPS）
@@ -78,7 +99,7 @@ docker build -t prum-ai-academy .
 
 1. `/up` が 200 を返すことを確認
 2. ログイン・クエスト一覧が表示されること
-3. アバターアップロードが S3 URL になること
+3. アバターアップロードが S3 署名付き URL になること
 4. `DB_FRESH=false` のまま再デプロイしてもデータが消えないこと
 
 ## 6. Render からの移行
@@ -111,7 +132,7 @@ Render 用 `render.yaml` は開発検証用として残しています。本番�
 ### S3 アップロード失敗
 
 - `league/flysystem-aws-s3-v3` がインストールされているか（`composer install`）
-- IAM ポリシーと `AWS_BUCKET` / `AWS_DEFAULT_REGION` を確認
+- IAM ポリシーと `AWS_BUCKET=ai-academy-prd` / `AWS_DEFAULT_REGION` を確認
 - `FILESYSTEM_PUBLIC_DISK=s3` になっているか
 
 ### 502 Bad Gateway

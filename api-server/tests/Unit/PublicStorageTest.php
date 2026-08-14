@@ -3,11 +3,22 @@
 namespace Tests\Unit;
 
 use App\Support\PublicStorage;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
+use Mockery;
 use Tests\TestCase;
 
 class PublicStorageTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        Mockery::close();
+
+        parent::tearDown();
+    }
+
     public function test_public_disk_defaults_to_public(): void
     {
         Config::set('filesystems.public_disk', 'public');
@@ -69,6 +80,19 @@ class PublicStorageTest extends TestCase
         $this->assertSame('quest-submissions/1/2/file.pdf', $path);
     }
 
+    public function test_resolve_path_from_signed_s3_url_strips_query(): void
+    {
+        Config::set('filesystems.public_disk', 's3');
+        Config::set('filesystems.disks.s3.driver', 's3');
+        Config::set('filesystems.disks.s3.bucket', 'ai-academy-prd');
+
+        $path = PublicStorage::resolvePathFromUrl(
+            'https://ai-academy-prd.s3.ap-northeast-1.amazonaws.com/avatars/1/test.jpg?X-Amz-Signature=abc',
+        );
+
+        $this->assertSame('avatars/1/test.jpg', $path);
+    }
+
     public function test_resolve_path_from_unrelated_s3_url_returns_null(): void
     {
         Config::set('filesystems.public_disk', 's3');
@@ -91,5 +115,42 @@ class PublicStorageTest extends TestCase
         PublicStorage::deleteUrl('https://example.com/shared/document.pdf');
 
         $this->assertNull(PublicStorage::resolvePathFromUrl('https://example.com/shared/document.pdf'));
+    }
+
+    public function test_url_for_stored_returns_external_link_as_is(): void
+    {
+        $url = PublicStorage::urlForStored('https://docs.google.com/document/d/abc');
+
+        $this->assertSame('https://docs.google.com/document/d/abc', $url);
+    }
+
+    public function test_url_for_stored_uses_temporary_url_for_s3_path(): void
+    {
+        Config::set('filesystems.public_disk', 's3');
+        Config::set('filesystems.disks.s3.driver', 's3');
+        Config::set('filesystems.disks.s3.temporary_url', true);
+        Config::set('filesystems.disks.s3.temporary_url_minutes', 60);
+
+        $disk = Mockery::mock(Filesystem::class);
+        $disk->shouldReceive('temporaryUrl')
+            ->once()
+            ->with('avatars/1/test.jpg', Mockery::type(Carbon::class))
+            ->andReturn('https://signed.example/avatars/1/test.jpg');
+
+        Storage::shouldReceive('disk')->with('s3')->andReturn($disk);
+
+        $url = PublicStorage::urlForStored('avatars/1/test.jpg');
+
+        $this->assertSame('https://signed.example/avatars/1/test.jpg', $url);
+    }
+
+    public function test_is_stored_on_disk_distinguishes_external_links(): void
+    {
+        Config::set('filesystems.public_disk', 's3');
+        Config::set('filesystems.disks.s3.driver', 's3');
+        Config::set('filesystems.disks.s3.bucket', 'ai-academy-prd');
+
+        $this->assertTrue(PublicStorage::isStoredOnDisk('quest-submissions/1/2/file.pdf'));
+        $this->assertFalse(PublicStorage::isStoredOnDisk('https://example.com/doc.pdf'));
     }
 }

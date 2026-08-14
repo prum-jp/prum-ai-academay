@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Quest;
+use App\Support\PublicStorage;
 use App\Support\QuestProgressStatus;
 use App\Support\QuestRewardPresenter;
 use App\Support\QuestSkillGrantPresenter;
@@ -83,7 +84,7 @@ class QuestResource extends JsonResource
             'isCompleted' => (bool) ($progress?->is_completed ?? false),
             'progressStatus' => QuestProgressStatus::resolveFromProgress($progress),
             'submission' => QuestSubmissionPresenter::fromProgress($progress),
-            'submissionUrl' => $progress?->submission_url,
+            'submissionUrl' => PublicStorage::urlForStored($progress?->submission_url),
             'participantCount' => (int) ($this->applications_count ?? 0),
         ];
     }

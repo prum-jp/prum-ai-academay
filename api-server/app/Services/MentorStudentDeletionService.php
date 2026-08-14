@@ -47,7 +47,7 @@ class MentorStudentDeletionService
         StudentQuestProgress::query()
             ->where('user_id', $student->id)
             ->pluck('submission_url')
-            ->each(fn (?string $url) => PublicStorage::deleteUrl($url));
+            ->each(fn (?string $reference) => PublicStorage::deleteStoredReference($reference));
 
         $disk = PublicStorage::disk();
         $disk->deleteDirectory('avatars/'.$student->id);

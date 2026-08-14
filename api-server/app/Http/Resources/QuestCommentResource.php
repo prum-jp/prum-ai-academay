@@ -29,7 +29,7 @@ class QuestCommentResource extends JsonResource
             'id' => $this->id,
             'type' => $this->type ?? QuestActivityType::COMMENT,
             'body' => $this->body,
-            'metadata' => $this->metadata,
+            'metadata' => $this->resolveMetadata($this->metadata),
             'authorId' => $this->author_id,
             'authorName' => $author?->name ?? '',
             'authorRole' => $author?->role === User::ROLE_MENTOR ? 'mentor' : 'student',
@@ -37,5 +37,26 @@ class QuestCommentResource extends JsonResource
             'createdAt' => $this->created_at?->toIso8601String(),
             'isOwn' => $request->user()?->id === $this->author_id,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $metadata
+     * @return array<string, mixed>|null
+     */
+    private function resolveMetadata(?array $metadata): ?array
+    {
+        if ($metadata === null) {
+            return null;
+        }
+
+        if (
+            ($this->type ?? QuestActivityType::COMMENT) === QuestActivityType::SUBMISSION_ADDED
+            && isset($metadata['url'])
+            && is_string($metadata['url'])
+        ) {
+            $metadata['url'] = PublicStorage::urlForStored($metadata['url']);
+        }
+
+        return $metadata;
     }
 }

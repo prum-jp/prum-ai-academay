@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use DateTimeInterface;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,8 +23,17 @@ class PublicStorage
         return config('filesystems.disks.'.self::diskName().'.driver') === 'local';
     }
 
+    public static function isS3(): bool
+    {
+        return config('filesystems.disks.'.self::diskName().'.driver') === 's3';
+    }
+
     public static function url(string $path): string
     {
+        if (self::usesTemporaryUrls()) {
+            return self::disk()->temporaryUrl($path, self::temporaryUrlExpiresAt());
+        }
+
         return self::disk()->url($path);
     }
 
@@ -31,6 +41,28 @@ class PublicStorage
     {
         if ($path === null || $path === '') {
             return null;
+        }
+
+        return self::url($path);
+    }
+
+    /**
+     * Resolve a stored reference to a client-facing URL.
+     * Accepts object paths, legacy S3 URLs, or external links (returned as-is).
+     */
+    public static function urlForStored(?string $stored): ?string
+    {
+        if ($stored === null || $stored === '') {
+            return null;
+        }
+
+        if (! self::isStoredOnDisk($stored)) {
+            return $stored;
+        }
+
+        $path = self::resolvePathFromStored($stored);
+        if ($path === null || $path === '') {
+            return $stored;
         }
 
         return self::url($path);
@@ -47,12 +79,47 @@ class PublicStorage
 
     public static function deleteUrl(?string $url): void
     {
-        $path = self::resolvePathFromUrl($url);
-        if ($path === null) {
+        self::deleteStoredReference($url);
+    }
+
+    public static function deleteStoredReference(?string $stored): void
+    {
+        if (! self::isStoredOnDisk($stored)) {
+            return;
+        }
+
+        $path = self::resolvePathFromStored($stored);
+        if ($path === null || $path === '') {
             return;
         }
 
         self::delete($path);
+    }
+
+    public static function resolvePathFromStored(?string $stored): ?string
+    {
+        if ($stored === null || $stored === '') {
+            return null;
+        }
+
+        if (! str_starts_with($stored, 'http://') && ! str_starts_with($stored, 'https://')) {
+            return $stored;
+        }
+
+        return self::resolvePathFromUrl($stored);
+    }
+
+    public static function isStoredOnDisk(?string $stored): bool
+    {
+        if ($stored === null || $stored === '') {
+            return false;
+        }
+
+        if (! str_starts_with($stored, 'http://') && ! str_starts_with($stored, 'https://')) {
+            return true;
+        }
+
+        return self::resolvePathFromUrl($stored) !== null;
     }
 
     public static function resolvePathFromUrl(?string $url): ?string
@@ -72,7 +139,7 @@ class PublicStorage
             return null;
         }
 
-        if (config('filesystems.disks.'.self::diskName().'.driver') !== 's3') {
+        if (! self::isS3()) {
             return null;
         }
 
@@ -93,13 +160,34 @@ class PublicStorage
         }
 
         if (str_starts_with($host, $bucket.'.s3.') || str_starts_with($host, $bucket.'.s3-')) {
-            return $path;
+            return self::stripSignedUrlQuery($path);
         }
 
         if (str_starts_with($path, $bucket.'/')) {
-            return substr($path, strlen($bucket) + 1);
+            return self::stripSignedUrlQuery(substr($path, strlen($bucket) + 1));
         }
 
         return null;
+    }
+
+    private static function usesTemporaryUrls(): bool
+    {
+        if (! self::isS3()) {
+            return false;
+        }
+
+        return (bool) config('filesystems.disks.'.self::diskName().'.temporary_url', true);
+    }
+
+    private static function temporaryUrlExpiresAt(): DateTimeInterface
+    {
+        $minutes = (int) config('filesystems.disks.'.self::diskName().'.temporary_url_minutes', 60);
+
+        return now()->addMinutes(max($minutes, 1));
+    }
+
+    private static function stripSignedUrlQuery(string $path): string
+    {
+        return strtok($path, '?') ?: $path;
     }
 }
