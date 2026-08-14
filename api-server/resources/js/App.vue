@@ -1,5 +1,10 @@
 <template>
-    <div class="app-shell" :class="{ 'app-shell-centered': !isAuthenticated }">
+    <PageLoadGate
+        v-if="!initialized"
+        :is-loading="true"
+        loading-message="アプリを起動しています..."
+    />
+    <div v-else class="app-shell" :class="{ 'app-shell-centered': !isAuthenticated }">
         <nav v-if="isAuthenticated" class="app-nav">
             <div class="app-nav-links">
                 <RouterLink v-if="isMentor" :to="{ name: 'mentor-quests' }">クエスト管理</RouterLink>
@@ -31,14 +36,15 @@ import { useAuth } from '@/composables/shared/useAuth';
 import { useMentorReviewRequests } from '@/composables/mentor/useMentorReviewRequests';
 import MentorNotificationBell from '@/components/rpg/mentor/MentorNotificationBell.vue';
 import StudentNotificationBell from '@/components/rpg/student/StudentNotificationBell.vue';
+import PageLoadGate from '@/components/rpg/shared/PageLoadGate.vue';
 
 const router = useRouter();
-const { isAuthenticated, isMentor, isStudent, user, logout } = useAuth();
+const { initialized, isAuthenticated, isMentor, isStudent, user, logout } = useAuth();
 const { total: reviewRequestCount, refresh: refreshReviewRequests } = useMentorReviewRequests();
 
 const handleLogout = async (): Promise<void> => {
     await logout();
-    await router.push({ name: 'login' });
+    await router.replace({ name: 'login' });
 };
 
 const loadReviewRequestCount = (): void => {

@@ -35,9 +35,8 @@ export function useAuth() {
             user.value = null;
             return null;
         } finally {
-            if (currentRequestId === authRequestId) {
-                initialized.value = true;
-            }
+            // Always unblock router bootstrap even if a stale request finishes last.
+            initialized.value = true;
         }
     };
 
@@ -56,6 +55,8 @@ export function useAuth() {
 
         try {
             await logoutRequest();
+        } catch {
+            // Ignore network/abort errors; local session state is cleared below.
         } finally {
             user.value = null;
         }
