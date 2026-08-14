@@ -43,7 +43,7 @@ class StudentExperienceService
             return;
         }
 
-        $stat = $this->ensureStudentStat($student);
+        $stat = StudentStat::ensureForUser($student);
         $stat->total_xp = (int) $stat->total_xp + $points;
         $stat->save();
     }
@@ -55,25 +55,12 @@ class StudentExperienceService
             return;
         }
 
-        $stat = $this->ensureStudentStat($student);
-        $stat->total_xp = max(0, (int) $stat->total_xp - $points);
-        $stat->save();
-    }
-
-    private function ensureStudentStat(User $student): StudentStat
-    {
-        $stat = $student->studentStat;
-
-        if ($stat !== null) {
-            return $stat;
+        $stat = StudentStat::findForUser($student);
+        if ($stat === null) {
+            return;
         }
 
-        return StudentStat::query()->create([
-            'user_id' => $student->id,
-            'stat_business_skill' => 0,
-            'stat_human_skill' => 0,
-            'stat_conceptual_skill' => 0,
-            'total_xp' => 0,
-        ]);
+        $stat->total_xp = max(0, (int) $stat->total_xp - $points);
+        $stat->save();
     }
 }

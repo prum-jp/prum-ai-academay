@@ -37,7 +37,7 @@ class StudentSkillGrantService
             return;
         }
 
-        $stat = $this->ensureStudentStat($student);
+        $stat = StudentStat::ensureForUser($student);
 
         foreach ($quest->rewards as $reward) {
             $column = SkillKeys::COLUMN_MAP[$reward->stat] ?? null;
@@ -58,7 +58,7 @@ class StudentSkillGrantService
             return;
         }
 
-        $stat = $student->studentStat;
+        $stat = StudentStat::findForUser($student);
         if ($stat === null) {
             return;
         }
@@ -73,22 +73,5 @@ class StudentSkillGrantService
         }
 
         $stat->save();
-    }
-
-    private function ensureStudentStat(User $student): StudentStat
-    {
-        $stat = $student->studentStat;
-
-        if ($stat !== null) {
-            return $stat;
-        }
-
-        return StudentStat::query()->create([
-            'user_id' => $student->id,
-            'stat_business_skill' => 0,
-            'stat_human_skill' => 0,
-            'stat_conceptual_skill' => 0,
-            'total_xp' => 0,
-        ]);
     }
 }
