@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Support\PublicStorage;
 use App\Support\StudentLevelResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -36,12 +37,13 @@ class AdventurerProfileResource extends JsonResource
         ];
 
         $level = $this->studentLevelResolver->resolvePayload($this->resource);
+        $avatarUrl = $this->studentLevelResolver->resolveAvatarUrl($this->resource);
 
-        return [
+        $data = [
             'name' => $this->name,
             'background' => $profile?->background ?? '',
             'hobby' => $profile?->hobby ?? '',
-            'avatarUrl' => $this->studentLevelResolver->resolveAvatarUrl($this->resource),
+            'avatarUrl' => $avatarUrl,
             'weaponSkill' => $profile?->weapon_skill ?? '',
             'spellGoal' => $profile?->spell_goal ?? '',
             'stats' => $stats,
@@ -57,5 +59,7 @@ class AdventurerProfileResource extends JsonResource
             // 'earnedBadgeCount' => StudentBadge::query()->where('user_id', $this->id)->count(),
             // 'totalBadgeCount' => Badge::query()->count(),
         ];
+
+        return PublicStorage::appendLastUrlErrorTo($data);
     }
 }

@@ -43,6 +43,8 @@ final class QuestSubmissionType
         self::AUDIO => 20 * 1024 * 1024,
     ];
 
+    public const MAX_IMAGES = 10;
+
     public static function isFileType(string $type): bool
     {
         return in_array($type, [self::IMAGE, self::VIDEO, self::AUDIO], true);

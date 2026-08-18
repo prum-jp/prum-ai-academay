@@ -50,6 +50,8 @@ export const questSubmissionMaxBytes: Record<
     audio: 20 * 1024 * 1024,
 };
 
+export const questSubmissionMaxImages = 10;
+
 export const questSubmissionMaxSizeLabels: Record<
     Exclude<QuestSubmissionType, 'link' | 'text'>,
     string
@@ -103,6 +105,13 @@ export const questSubmissionMessages = {
         `ファイルサイズは ${questSubmissionMaxSizeLabels[type]} 以下にしてください。`,
     submitFailed: '提出物の保存に失敗しました。',
     submitSuccess: '提出物を保存しました。',
+    addImageSuccess: '画像を追加しました。',
+    deleteImageSuccess: '画像を削除しました。',
+    deleteImageFailed: '画像の削除に失敗しました。',
+    addImageLabel: '画像を追加',
+    deleteImageLabel: 'この画像を削除',
+    savedImagesLabel: '提出済みの画像',
+    maxImagesReached: '画像は最大10枚まで登録できます。',
     savedLabel: '提出済み',
     openLinkLabel: 'リンクを開く',
     openFileLabel: 'ファイルを開く',

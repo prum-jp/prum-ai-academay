@@ -50,6 +50,10 @@ export const submitQuestSubmission = async (
     questId: number,
     payload: QuestSubmissionPayload,
 ): Promise<QuestItem> => {
+    if (payload.type === 'image' && payload.file) {
+        return addQuestSubmissionImage(questId, payload.file);
+    }
+
     if (payload.file) {
         const formData = new FormData();
         formData.append('type', payload.type);
@@ -67,6 +71,35 @@ export const submitQuestSubmission = async (
         url: payload.url,
         text: payload.text,
     });
+
+    return data;
+};
+
+export const addQuestSubmissionImage = async (
+    questId: number,
+    file: File,
+): Promise<QuestItem> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const { data } = await axios.post<QuestItem>(
+        `/api/quests/${questId}/submission/images`,
+        formData,
+        {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        },
+    );
+
+    return data;
+};
+
+export const deleteQuestSubmissionImage = async (
+    questId: number,
+    fileId: number,
+): Promise<QuestItem> => {
+    const { data } = await axios.delete<QuestItem>(
+        `/api/quests/${questId}/submission/images/${fileId}`,
+    );
 
     return data;
 };

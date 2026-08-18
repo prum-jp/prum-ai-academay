@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AddQuestSubmissionImageRequest;
 use App\Http\Requests\UpdateQuestSubmissionRequest;
 use App\Http\Resources\QuestResource;
 use App\Models\Quest;
+use App\Models\User;
 use App\Services\QuestBoardService;
 use App\Services\QuestProgressUpdateService;
 use App\Services\StudentQuestAccessService;
@@ -27,9 +29,7 @@ class QuestController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $student = AdventurerContext::targetStudent($request);
-        $studentLevel = $this->studentLevelResolver->resolve($student);
-        $quest = $this->studentQuestAccessService->findQuestForStudent($student, $id);
+        ['student' => $student, 'studentLevel' => $studentLevel, 'quest' => $quest] = $this->resolveQuestContext($request, $id);
 
         return response()->json([
             'data' => (new QuestResource($quest))->additional([
@@ -65,11 +65,7 @@ class QuestController extends Controller
             'status' => ['required', 'string', Rule::in(QuestProgressStatus::ALL)],
         ]);
 
-        /** @var \App\Models\User $actor */
-        $actor = $request->user();
-        $student = AdventurerContext::targetStudent($request);
-        $studentLevel = $this->studentLevelResolver->resolve($student);
-        $quest = $this->studentQuestAccessService->findQuestForStudent($student, $id);
+        ['actor' => $actor, 'student' => $student, 'studentLevel' => $studentLevel, 'quest' => $quest] = $this->resolveQuestContext($request, $id);
 
         $result = $this->questProgressUpdateService->updateStatus(
             $actor,
@@ -80,18 +76,12 @@ class QuestController extends Controller
             [QuestProgressStatus::class, 'studentCanTransition'],
         );
 
-        return response()->json(
-            $this->questProgressUpdateService->toQuestResourcePayload($result),
-        );
+        return $this->questResourceResponse($result);
     }
 
     public function updateSubmission(UpdateQuestSubmissionRequest $request, int $id): JsonResponse
     {
-        /** @var \App\Models\User $actor */
-        $actor = $request->user();
-        $student = AdventurerContext::targetStudent($request);
-        $studentLevel = $this->studentLevelResolver->resolve($student);
-        $quest = $this->studentQuestAccessService->findQuestForStudent($student, $id);
+        ['actor' => $actor, 'student' => $student, 'studentLevel' => $studentLevel, 'quest' => $quest] = $this->resolveQuestContext($request, $id);
         $validated = $request->validated();
 
         $result = $this->questProgressUpdateService->updateSubmission(
@@ -105,6 +95,62 @@ class QuestController extends Controller
             $request->file('file'),
         );
 
+        return $this->questResourceResponse($result);
+    }
+
+    public function addSubmissionImage(AddQuestSubmissionImageRequest $request, int $id): JsonResponse
+    {
+        ['actor' => $actor, 'student' => $student, 'studentLevel' => $studentLevel, 'quest' => $quest] = $this->resolveQuestContext($request, $id);
+
+        $result = $this->questProgressUpdateService->addSubmissionImage(
+            $actor,
+            $student,
+            $quest,
+            $studentLevel,
+            $request->file('file'),
+        );
+
+        return $this->questResourceResponse($result);
+    }
+
+    public function deleteSubmissionImage(Request $request, int $id, int $fileId): JsonResponse
+    {
+        ['student' => $student, 'studentLevel' => $studentLevel, 'quest' => $quest] = $this->resolveQuestContext($request, $id);
+
+        $result = $this->questProgressUpdateService->deleteSubmissionImage(
+            $student,
+            $quest,
+            $studentLevel,
+            $fileId,
+        );
+
+        return $this->questResourceResponse($result);
+    }
+
+    /**
+     * @return array{actor: User, student: User, studentLevel: int, quest: Quest}
+     */
+    private function resolveQuestContext(Request $request, int $id): array
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $student = AdventurerContext::targetStudent($request);
+        $studentLevel = $this->studentLevelResolver->resolve($student);
+        $quest = $this->studentQuestAccessService->findQuestForStudent($student, $id);
+
+        return [
+            'actor' => $actor,
+            'student' => $student,
+            'studentLevel' => $studentLevel,
+            'quest' => $quest,
+        ];
+    }
+
+    /**
+     * @param  array{quest: Quest, progress: \App\Models\StudentQuestProgress, studentLevel: int}  $result
+     */
+    private function questResourceResponse(array $result): JsonResponse
+    {
         return response()->json(
             $this->questProgressUpdateService->toQuestResourcePayload($result),
         );

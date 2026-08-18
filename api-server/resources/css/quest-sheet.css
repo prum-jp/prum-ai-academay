@@ -350,6 +350,60 @@
     background: #fff;
 }
 
+.quest-sheet-deliverable-saved-images-label {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+    color: #8a5a3a;
+}
+
+.quest-sheet-deliverable-image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.quest-sheet-deliverable-image-item {
+    position: relative;
+    margin: 0;
+}
+
+.quest-sheet-deliverable-image-link {
+    display: block;
+}
+
+.quest-sheet-deliverable-image-item .quest-sheet-deliverable-image {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+}
+
+.quest-sheet-deliverable-image-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: rgba(192, 57, 43, 0.92);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.quest-sheet-deliverable-image-delete:hover:not(:disabled) {
+    background: #c0392b;
+}
+
+.quest-sheet-deliverable-image-delete:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
 .quest-sheet-deliverable-text {
     margin: 0;
     padding: 12px;

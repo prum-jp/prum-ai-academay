@@ -9,6 +9,12 @@ export interface AdventurerProfile {
     background: string;
     hobby: string;
     avatarUrl: string | null;
+    avatarUrlError?: {
+        hint?: string;
+        message?: string;
+        path?: string;
+        exception?: string;
+    };
     weaponSkill: string;
     spellGoal: string;
     stats: AdventurerStats;

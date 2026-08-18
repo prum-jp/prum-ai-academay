@@ -43,15 +43,7 @@ class QuestDeletionImpactService
             'hasSubmissions' => $childQuestIds->isNotEmpty()
                 && StudentQuestProgress::query()
                     ->whereIn('quest_id', $childQuestIds)
-                    ->where(function ($query): void {
-                        $query->where(function ($inner): void {
-                            $inner->whereNotNull('submission_url')
-                                ->where('submission_url', '!=', '');
-                        })->orWhere(function ($inner): void {
-                            $inner->whereNotNull('submission_text')
-                                ->where('submission_text', '!=', '');
-                        });
-                    })
+                    ->hasAnySubmission()
                     ->exists(),
             'childQuestCount' => $childQuestIds->count(),
         ];
@@ -61,15 +53,7 @@ class QuestDeletionImpactService
     {
         return StudentQuestProgress::query()
             ->where('quest_id', $questId)
-            ->where(function ($query): void {
-                $query->where(function ($inner): void {
-                    $inner->whereNotNull('submission_url')
-                        ->where('submission_url', '!=', '');
-                })->orWhere(function ($inner): void {
-                    $inner->whereNotNull('submission_text')
-                        ->where('submission_text', '!=', '');
-                });
-            })
+            ->hasAnySubmission()
             ->exists();
     }
 }

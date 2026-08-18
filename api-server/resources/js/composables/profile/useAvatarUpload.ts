@@ -28,7 +28,13 @@ export function useAvatarUpload(onUpdated: (profile: AdventurerProfile) => void)
         clearError();
 
         try {
-            onUpdated(await uploadStudentAvatar(file));
+            const profile = await uploadStudentAvatar(file);
+            onUpdated(profile);
+
+            const hint = profile.avatarUrlError?.hint ?? profile.avatarUrlError?.message;
+            if (hint) {
+                error.value = hint;
+            }
         } catch (caughtError: unknown) {
             error.value = extractApiErrorMessage(
                 caughtError,

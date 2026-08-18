@@ -30,7 +30,7 @@ class QuestBoardService
                 'tool',
                 'tools',
                 'progressRecords' => function ($query) use ($student): void {
-                    $query->where('user_id', $student->id);
+                    $query->forStudent($student)->withSubmissionPayload();
                 },
             ])
             ->orderBy('sort_order')

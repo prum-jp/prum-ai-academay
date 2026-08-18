@@ -6,7 +6,6 @@ use App\Http\Resources\QuestResource;
 use App\Models\Quest;
 use App\Models\StudentQuestProgress;
 use App\Models\User;
-use App\Support\PublicStorage;
 use App\Support\QuestProgressStatus;
 use App\Support\QuestSubmissionPresenter;
 use App\Support\QuestSubmissionType;
@@ -22,6 +21,7 @@ class QuestProgressUpdateService
         // private readonly BadgeAwarder $badgeAwarder,
         private readonly QuestBoardService $questBoardService,
         private readonly QuestActivityRecorder $questActivityRecorder,
+        private readonly QuestSubmissionImageService $questSubmissionImageService,
         private readonly StudentExperienceService $studentExperienceService,
         private readonly StudentSkillGrantService $studentSkillGrantService,
         private readonly StudentLevelResolver $studentLevelResolver,
@@ -143,33 +143,25 @@ class QuestProgressUpdateService
             ? $type
             : QuestSubmissionType::LINK;
 
-        $progress = StudentQuestProgress::query()->firstOrNew([
-            'user_id' => $student->id,
-            'quest_id' => $quest->id,
-        ]);
-
-        if (! $progress->exists) {
-            QuestProgressStatus::applyToProgress($progress, QuestProgressStatus::NOT_STARTED);
+        if ($type === QuestSubmissionType::IMAGE && $file !== null) {
+            return $this->addSubmissionImage($actor, $student, $quest, $studentLevel, $file);
         }
 
-        $previousReference = $progress->submission_url;
+        $progress = StudentQuestProgress::firstOrInitializeFor($student, $quest);
 
-        DB::transaction(function () use ($actor, $student, $quest, $progress, $type, $url, $text, $file, $previousReference): void {
-            PublicStorage::deleteStoredReference($previousReference);
-
-            $storedReference = null;
-            $storedText = null;
-
-            if ($type === QuestSubmissionType::LINK) {
-                $storedReference = trim((string) $url);
-                $storedText = null;
-            } elseif ($type === QuestSubmissionType::TEXT) {
-                $storedReference = null;
-                $storedText = trim((string) $text);
-            } elseif (QuestSubmissionType::isFileType($type) && $file !== null) {
-                $storedReference = $this->questSubmissionStorageService->store($student, $quest, $file);
-                $storedText = null;
+        DB::transaction(function () use ($actor, $student, $quest, $progress, $type, $url, $text, $file): void {
+            if ($progress->submission_type === QuestSubmissionType::IMAGE && $type !== QuestSubmissionType::IMAGE) {
+                $this->questSubmissionImageService->detachAll($progress);
             }
+
+            [$storedReference, $storedText] = $this->resolveSubmissionPayload(
+                $student,
+                $quest,
+                $type,
+                $url,
+                $text,
+                $file,
+            );
 
             $progress->submission_type = $type;
             $progress->submission_url = $storedReference !== '' ? $storedReference : null;
@@ -186,7 +178,42 @@ class QuestProgressUpdateService
             );
         });
 
-        return $this->buildResult($quest, $student, $progress->fresh(), $studentLevel);
+        return $this->buildResult($quest, $student, $progress->fresh(['submissionFiles']), $studentLevel);
+    }
+
+    /**
+     * @return array{quest: Quest, progress: StudentQuestProgress, studentLevel: int}
+     */
+    public function addSubmissionImage(
+        User $actor,
+        User $student,
+        Quest $quest,
+        int $studentLevel,
+        UploadedFile $file,
+    ): array {
+        $this->assertQuestUnlocked($quest, $studentLevel);
+
+        $progress = StudentQuestProgress::firstOrInitializeFor($student, $quest);
+        $this->questSubmissionImageService->add($actor, $student, $quest, $progress, $file);
+
+        return $this->buildResult($quest, $student, $progress->fresh(['submissionFiles']), $studentLevel);
+    }
+
+    /**
+     * @return array{quest: Quest, progress: StudentQuestProgress, studentLevel: int}
+     */
+    public function deleteSubmissionImage(
+        User $student,
+        Quest $quest,
+        int $studentLevel,
+        int $fileId,
+    ): array {
+        $this->assertQuestUnlocked($quest, $studentLevel);
+
+        $progress = $this->questSubmissionImageService->findProgressOrFail($student, $quest);
+        $this->questSubmissionImageService->delete($progress, $fileId);
+
+        return $this->buildResult($quest, $student, $progress->fresh(['submissionFiles']), $studentLevel);
     }
 
     /**
@@ -209,6 +236,32 @@ class QuestProgressUpdateService
     }
 
     /**
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function resolveSubmissionPayload(
+        User $student,
+        Quest $quest,
+        string $type,
+        ?string $url,
+        ?string $text,
+        ?UploadedFile $file,
+    ): array {
+        if ($type === QuestSubmissionType::LINK) {
+            return [trim((string) $url), null];
+        }
+
+        if ($type === QuestSubmissionType::TEXT) {
+            return [null, trim((string) $text)];
+        }
+
+        if (QuestSubmissionType::isFileType($type) && $file !== null) {
+            return [$this->questSubmissionStorageService->store($student, $quest, $file), null];
+        }
+
+        return [null, null];
+    }
+
+    /**
      * @return array{quest: Quest, progress: StudentQuestProgress, studentLevel: int}
      */
     private function buildResult(
@@ -218,6 +271,7 @@ class QuestProgressUpdateService
         int $studentLevel,
     ): array {
         $this->questBoardService->loadQuestRelations($quest, $student);
+        $progress->loadMissing('submissionFiles');
         $quest->setRelation('progressRecords', collect([$progress]));
 
         return [

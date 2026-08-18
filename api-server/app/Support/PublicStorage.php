@@ -4,10 +4,15 @@ namespace App\Support;
 
 use DateTimeInterface;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class PublicStorage
 {
+    /** @var array{path: string, exception: string, message: string, hint: string}|null */
+    private static ?array $lastUrlError = null;
+
     public static function diskName(): string
     {
         return (string) config('filesystems.public_disk', 'public');
@@ -30,11 +35,14 @@ class PublicStorage
 
     public static function url(string $path): string
     {
-        if (self::usesTemporaryUrls()) {
-            return self::disk()->temporaryUrl($path, self::temporaryUrlExpiresAt());
+        $url = self::resolveUrl($path);
+        if ($url === null) {
+            $hint = self::$lastUrlError['hint'] ?? 'ストレージ URL の生成に失敗しました。';
+
+            throw new \RuntimeException($hint);
         }
 
-        return self::disk()->url($path);
+        return $url;
     }
 
     public static function urlOrNull(?string $path): ?string
@@ -43,7 +51,15 @@ class PublicStorage
             return null;
         }
 
-        return self::url($path);
+        return self::resolveUrl($path);
+    }
+
+    /**
+     * @return array{path: string, exception: string, message: string, hint: string}|null
+     */
+    public static function lastUrlError(): ?array
+    {
+        return self::$lastUrlError;
     }
 
     /**
@@ -65,7 +81,25 @@ class PublicStorage
             return $stored;
         }
 
-        return self::url($path);
+        return self::resolveUrl($path);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function appendLastUrlErrorTo(array $data, string $key = 'avatarUrlError'): array
+    {
+        $urlError = self::lastUrlError();
+        if ($urlError === null) {
+            return $data;
+        }
+
+        $data[$key] = config('app.debug')
+            ? $urlError
+            : ['hint' => $urlError['hint']];
+
+        return $data;
     }
 
     public static function delete(?string $path): void
@@ -189,5 +223,71 @@ class PublicStorage
     private static function stripSignedUrlQuery(string $path): string
     {
         return strtok($path, '?') ?: $path;
+    }
+
+    private static function resolveUrl(string $path): ?string
+    {
+        self::$lastUrlError = null;
+
+        try {
+            if (self::usesTemporaryUrls()) {
+                return self::disk()->temporaryUrl($path, self::temporaryUrlExpiresAt());
+            }
+
+            return self::disk()->url($path);
+        } catch (Throwable $exception) {
+            self::recordUrlError($path, $exception);
+
+            return null;
+        }
+    }
+
+    private static function recordUrlError(string $path, Throwable $exception): void
+    {
+        $hint = self::diagnoseUrlFailure($exception);
+
+        self::$lastUrlError = [
+            'path' => $path,
+            'exception' => $exception::class,
+            'message' => $exception->getMessage(),
+            'hint' => $hint,
+        ];
+
+        Log::warning('[PublicStorage] Failed to resolve public file URL.', [
+            'path' => $path,
+            'disk' => self::diskName(),
+            'bucket' => config('filesystems.disks.'.self::diskName().'.bucket'),
+            'region' => config('filesystems.disks.'.self::diskName().'.region'),
+            'exception' => $exception::class,
+            'message' => $exception->getMessage(),
+            'hint' => $hint,
+        ]);
+    }
+
+    private static function diagnoseUrlFailure(Throwable $exception): string
+    {
+        $message = $exception->getMessage();
+
+        if (str_contains($message, 'AccessDenied') || str_contains($message, '403')) {
+            return 'S3 の参照権限 (s3:GetObject) または署名 URL 生成権限を確認してください。';
+        }
+
+        if (str_contains($message, 'InvalidAccessKeyId')) {
+            return 'AWS_ACCESS_KEY_ID が正しくありません。Lightsail の環境変数を確認してください。';
+        }
+
+        if (str_contains($message, 'SignatureDoesNotMatch')) {
+            return 'AWS_SECRET_ACCESS_KEY が正しくありません。Lightsail の環境変数を確認してください。';
+        }
+
+        if (str_contains($message, 'NoSuchKey') || str_contains($message, '404')) {
+            return 'S3 上にファイルが存在しません。アップロード失敗または手動削除の可能性があります。';
+        }
+
+        if (str_contains($message, 'PermanentRedirect') || str_contains($message, 'AuthorizationHeaderMalformed')) {
+            return 'AWS_DEFAULT_REGION または AWS_BUCKET の設定を確認してください。';
+        }
+
+        return 'ストレージ URL の生成に失敗しました。詳細はサーバーログを確認してください。';
     }
 }

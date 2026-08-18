@@ -20,4 +20,9 @@ class QuestSubmissionStorageService
 
         return $path;
     }
+
+    public function delete(string $path): void
+    {
+        PublicStorage::deleteStoredReference($path);
+    }
 }

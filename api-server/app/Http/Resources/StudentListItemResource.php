@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Support\PublicStorage;
 use App\Support\StudentLevelResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -48,6 +49,6 @@ class StudentListItemResource extends JsonResource
             $data['isSelected'] = $this->id === $this->selectedStudentId;
         }
 
-        return $data;
+        return PublicStorage::appendLastUrlErrorTo($data);
     }
 }

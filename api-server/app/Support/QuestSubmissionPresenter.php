@@ -7,7 +7,7 @@ use App\Models\StudentQuestProgress;
 final class QuestSubmissionPresenter
 {
     /**
-     * @return array{type: string, url: string|null, text: string|null}|null
+     * @return array{type: string, url: string|null, text: string|null, files?: list<array{id: int, url: string|null}>}|null
      */
     public static function fromProgress(?StudentQuestProgress $progress): ?array
     {
@@ -15,6 +15,41 @@ final class QuestSubmissionPresenter
             return null;
         }
 
+        if ($progress->submission_type === QuestSubmissionType::IMAGE) {
+            return self::presentImageSubmission($progress);
+        }
+
+        return self::presentScalarSubmission($progress);
+    }
+
+    public static function hasSubmission(?StudentQuestProgress $progress): bool
+    {
+        return self::fromProgress($progress) !== null;
+    }
+
+    /**
+     * @return array{type: string, url: string|null, text: string|null, files: list<array{id: int, url: string|null}>}|null
+     */
+    private static function presentImageSubmission(StudentQuestProgress $progress): ?array
+    {
+        $files = self::filesFromProgress($progress);
+        if ($files === []) {
+            return null;
+        }
+
+        return [
+            'type' => QuestSubmissionType::IMAGE,
+            'url' => $files[0]['url'] ?? null,
+            'text' => null,
+            'files' => $files,
+        ];
+    }
+
+    /**
+     * @return array{type: string, url: string|null, text: string|null}|null
+     */
+    private static function presentScalarSubmission(StudentQuestProgress $progress): ?array
+    {
         $url = PublicStorage::urlForStored($progress->submission_url);
         $text = $progress->submission_text;
         $type = $progress->submission_type;
@@ -34,8 +69,18 @@ final class QuestSubmissionPresenter
         ];
     }
 
-    public static function hasSubmission(?StudentQuestProgress $progress): bool
+    /**
+     * @return list<array{id: int, url: string|null}>
+     */
+    private static function filesFromProgress(StudentQuestProgress $progress): array
     {
-        return self::fromProgress($progress) !== null;
+        if (! $progress->relationLoaded('submissionFiles')) {
+            $progress->load('submissionFiles');
+        }
+
+        return $progress->submissionFiles
+            ->map(fn ($file) => $file->toApiPayload())
+            ->values()
+            ->all();
     }
 }

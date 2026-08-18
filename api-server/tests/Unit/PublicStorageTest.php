@@ -144,6 +144,53 @@ class PublicStorageTest extends TestCase
         $this->assertSame('https://signed.example/avatars/1/test.jpg', $url);
     }
 
+    public function test_url_or_null_records_error_when_temporary_url_fails(): void
+    {
+        Config::set('filesystems.public_disk', 's3');
+        Config::set('filesystems.disks.s3.driver', 's3');
+        Config::set('filesystems.disks.s3.temporary_url', true);
+
+        $disk = Mockery::mock(Filesystem::class);
+        $disk->shouldReceive('temporaryUrl')
+            ->once()
+            ->with('avatars/1/test.jpg', Mockery::type(Carbon::class))
+            ->andThrow(new \RuntimeException('AccessDenied'));
+
+        Storage::shouldReceive('disk')->with('s3')->andReturn($disk);
+
+        $this->assertNull(PublicStorage::urlOrNull('avatars/1/test.jpg'));
+
+        $error = PublicStorage::lastUrlError();
+        $this->assertNotNull($error);
+        $this->assertSame('avatars/1/test.jpg', $error['path']);
+        $this->assertStringContainsString('GetObject', $error['hint']);
+    }
+
+    public function test_append_last_url_error_to_includes_hint_when_not_debug(): void
+    {
+        Config::set('app.debug', false);
+        Config::set('filesystems.public_disk', 's3');
+        Config::set('filesystems.disks.s3.driver', 's3');
+        Config::set('filesystems.disks.s3.temporary_url', true);
+
+        $disk = Mockery::mock(Filesystem::class);
+        $disk->shouldReceive('temporaryUrl')
+            ->once()
+            ->andThrow(new \RuntimeException('AccessDenied'));
+
+        Storage::shouldReceive('disk')->with('s3')->andReturn($disk);
+
+        PublicStorage::urlOrNull('avatars/1/test.jpg');
+
+        $data = PublicStorage::appendLastUrlErrorTo(['avatarUrl' => null]);
+
+        $this->assertArrayHasKey('avatarUrlError', $data);
+        $this->assertSame(
+            ['hint' => 'S3 の参照権限 (s3:GetObject) または署名 URL 生成権限を確認してください。'],
+            $data['avatarUrlError'],
+        );
+    }
+
     public function test_is_stored_on_disk_distinguishes_external_links(): void
     {
         Config::set('filesystems.public_disk', 's3');

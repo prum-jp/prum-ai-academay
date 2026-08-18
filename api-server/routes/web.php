@@ -38,6 +38,8 @@ Route::prefix('api')->group(function (): void {
         Route::patch('/quests/{id}/progress', [QuestController::class, 'updateProgress']);
         Route::post('/quests/{id}/submission', [QuestController::class, 'updateSubmission']);
         Route::patch('/quests/{id}/submission', [QuestController::class, 'updateSubmission']);
+        Route::post('/quests/{id}/submission/images', [QuestController::class, 'addSubmissionImage']);
+        Route::delete('/quests/{id}/submission/images/{fileId}', [QuestController::class, 'deleteSubmissionImage']);
         Route::get('/quests/{id}/comments', [QuestCommentController::class, 'index']);
         Route::post('/quests/{id}/comments', [QuestCommentController::class, 'store']);
         // TODO: 後に機能追加 — 実績バッジ一覧 API

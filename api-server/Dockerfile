@@ -52,6 +52,7 @@ RUN composer install \
 COPY . .
 
 COPY --from=frontend /app/public/build ./public/build
+RUN rm -f public/hot
 
 COPY docker/aws/nginx.conf /etc/nginx/conf.d/default.conf.template
 

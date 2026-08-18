@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesQuestSubmissionFile;
 use App\Support\QuestSubmissionType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -9,6 +10,8 @@ use Illuminate\Validation\Validator;
 
 class UpdateQuestSubmissionRequest extends FormRequest
 {
+    use ValidatesQuestSubmissionFile;
+
     public function authorize(): bool
     {
         return true;
@@ -52,22 +55,7 @@ class UpdateQuestSubmissionRequest extends FormRequest
                 return;
             }
 
-            $file = $this->file('file');
-            if ($file === null) {
-                $validator->errors()->add('file', 'ファイルを選択してください。');
-
-                return;
-            }
-
-            $allowedMimeTypes = QuestSubmissionType::MIME_TYPES[$type] ?? [];
-            if (! in_array($file->getMimeType(), $allowedMimeTypes, true)) {
-                $validator->errors()->add('file', 'この形式のファイルはアップロードできません。');
-            }
-
-            $maxBytes = QuestSubmissionType::MAX_BYTES[$type] ?? null;
-            if ($maxBytes !== null && $file->getSize() > $maxBytes) {
-                $validator->errors()->add('file', 'ファイルサイズが上限を超えています。');
-            }
+            $this->validateSubmissionFile($validator, $this->file('file'), $type);
         });
     }
 

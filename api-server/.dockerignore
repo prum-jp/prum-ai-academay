@@ -18,3 +18,4 @@ tests
 docker/8.3
 docker/8.4
 compose.yaml
+public/hot

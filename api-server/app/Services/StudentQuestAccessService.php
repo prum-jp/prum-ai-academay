@@ -36,7 +36,7 @@ class StudentQuestAccessService
                             'tool',
                             'tools',
                             'progressRecords' => function ($progressQuery) use ($student): void {
-                                $progressQuery->where('user_id', $student->id);
+                                $progressQuery->forStudent($student)->withSubmissionPayload();
                             },
                         ])
                         ->orderBy('sort_order')
@@ -80,7 +80,7 @@ class StudentQuestAccessService
             'tools',
             'questUnit:id,title,sort_order',
             'progressRecords' => function ($query) use ($student): void {
-                $query->where('user_id', $student->id);
+                $query->forStudent($student)->withSubmissionPayload();
             },
         ])->loadCount([
             'applications as applications_count' => function ($query): void {
